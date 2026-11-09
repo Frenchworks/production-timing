@@ -1,6 +1,6 @@
 // Offline cache of the chrono page (works only on HTTPS or localhost).
-const CACHE = "chrono-v2";
-const FILES = ["./", "index.html", "chart.html", "chrono-core.js", "chrono-capture.js", "chrono.css", "manifest.json"];
+const CACHE = "chrono-v3";
+const FILES = ["./", "index.html", "chart.html", "chrono-core.js", "chrono-capture.js", "chrono.css", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-180.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)));

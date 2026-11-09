@@ -22,7 +22,8 @@
 .chrono-mode.active { background: var(--accent, #C8DC1B); color: var(--on-accent, #2D4455); border-color: var(--darken, #334A5C); }
 .chrono-mode:disabled { opacity: 0.5; cursor: not-allowed; }
 .chrono-mode-tag { display: inline-block; font-size: 0.75em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 4px; background: var(--card-light, #eef2f5); color: var(--title, #2D4455); }
-.chrono-btn { height: auto; min-height: 44px; padding: 10px 12px; font-size: 0.95em; width: 100%; }
+/* PC buttons: the size of the buttons of the app (32px high, 0.8em text, sans-serif); the phone sizes are in the media query */
+.chrono-btn { height: auto; min-height: 32px; padding: 8px 10px; font-size: 0.8em; font-family: sans-serif; width: 100%; }
 .chrono-btn.start { background: var(--accent, #C8DC1B); }
 .chrono-btn.stop { background: #BE0000; color: #fff; text-shadow: none; }
 .chrono-btn.step { background: var(--card, #f8f8f8); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); }
@@ -33,6 +34,15 @@
 .chrono-next-row .next { flex: 1 1 auto; width: auto; }
 .chrono-btn.pass { flex: 0 0 auto; width: auto; min-height: 0; padding: 6px 12px; font-size: 0.8em; background: var(--card, #f8f8f8); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); }
 .chrono-done b { font-weight: bold; }
+
+/* title row with a button on the right, and the modal window that opens from it */
+.chrono-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chrono-title-row h2 { margin: 0; }
+.chrono-modal { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+.chrono-modal[hidden] { display: none; }
+.chrono-modal-card { width: 100%; max-width: 380px; max-height: 90vh; overflow: auto; box-sizing: border-box; padding: 16px; border-radius: 10px; background: var(--bg, #fff); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+.chrono-modal-card .chrono-qr { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 10px; }
+.chrono-modal-card canvas { max-width: 100%; height: auto; }
 
 /* same look as the PC app: a field with the accent colour when it is selected, and the selected text in the accent colour */
 .chrono input[type="text"], .chrono input[type="number"] {
