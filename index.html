@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#456a83">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Production Timing">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="chrono.css">
+    <title>Production Timing</title>
+    <style>
+      /* same colours as the PC app (style.css for light, dark.css for dark) */
+      :root { --bg: #fff; --fg: #222; --muted: #666; --border: #98abb3; --boxborder: #d6d6d6; --primary: #6A99AD; --darken: #334A5C; --accent: #C8DC1B; --accent-hover: #BCCF19; --on-accent: #2D4455; --card: #f8f8f8; --card-light: #eef2f5; --title: #2D4455; --text: #658091; --dark-text: #333333; --input-bg: #f8fafc; --input-focus-bg: #fff; }
+      @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #242424; --fg: #f0f0f0; --muted: #c2c2c2; --border: #474747; --boxborder: #4a4a4a; --darken: #4d768a; --accent: #C8DC1B; --accent-hover: #a9be17; --on-accent: #1a1a1a; --card: #2d2d2d; --card-light: #363636; --title: #d0e2f2; --text: #b7c8d5; --dark-text: #f0f0f0; --input-bg: #303030; --input-focus-bg: #353535; color-scheme: dark; } }
+      html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+      body { padding: max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); box-sizing: border-box; }
+      header h1 { font-size: 1.2em; margin: 0 0 4px; color: var(--title); }
+      header p { font-size: 0.8em; margin: 0 0 12px; opacity: 0.8; }
+      .chrono-page-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 6px; }
+      .chrono-page-actions button { min-height: 44px; padding: 10px 14px; border: 0; border-radius: 6px; background: var(--accent); color: var(--on-accent); font-weight: bold; font-size: 0.95em; cursor: pointer; flex: 1 1 160px; }
+      .chrono-page-actions button.secondary { background: var(--card); color: var(--fg); border: 1px solid var(--boxborder); }
+      #chrono-note { font-size: 0.8em; margin-top: 6px; color: #BE0000; }
+      .chrono-table-wrap { max-width: 100%; }
+      header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: relative; }
+      header.top > div { min-width: 0; }
+      .menu-btn { flex: 0 0 auto; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--card); color: var(--fg); cursor: pointer; padding: 0; }
+      .mode-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; width: min(260px, calc(100vw - 32px)); padding: 10px; border: 1px solid var(--boxborder); border-radius: 10px; background: var(--card); box-shadow: 0 8px 24px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; }
+      .mode-menu[hidden] { display: none; }
+      /* the Mode choices open over the menu itself, they do not push the other buttons down */
+      .mode-group { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; flex-direction: column; gap: 8px; padding: 10px; box-sizing: border-box; border: 1px solid var(--boxborder); border-radius: 10px; background: var(--card); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+      .mode-group[hidden] { display: none; }
+      /* a dark veil over the page while the menu is open; the menu sits above it */
+      .menu-overlay { position: fixed; inset: 0; z-index: 25; background: rgba(0,0,0,0.6); }
+      .menu-overlay[hidden] { display: none; }
+      /* the export is the main action of the menu: accent colour, as the main buttons of the PC app */
+      #chrono-export { background: var(--accent); color: var(--on-accent); border-color: var(--darken); font-weight: bold; }
+      .chart-panel { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+      .chart-panel[hidden] { display: none; }
+      .chart-card { width: 100%; max-width: 640px; max-height: 90vh; overflow: auto; box-sizing: border-box; padding: 12px; border-radius: 10px; background: var(--bg); color: var(--fg); border: 1px solid var(--boxborder); }
+      .chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; color: var(--title); }
+      .chart-head button { min-height: 40px; padding: 0 14px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--bg); color: var(--fg); font-weight: bold; cursor: pointer; }
+      .mode-menu p { margin: 0; font-size: 0.8em; opacity: 0.8; }
+      .mode-menu button { min-height: 48px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--bg); color: var(--fg); font-size: 1em; font-weight: bold; cursor: pointer; text-align: left; padding: 0 14px; }
+      .mode-menu button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--darken); }
+    </style>
+  </head>
+  <body>
+    <div id="menu-overlay" class="menu-overlay" hidden></div>
+    <header class="top">
+      <div>
+        <h1>Production Timing</h1>
+        <p>Press the buttons during the weld. Export the file at the end of the session, then import it on the PC.</p>
+      </div>
+      <button type="button" class="menu-btn" id="mode-menu-btn" aria-label="Mode menu" aria-expanded="false" aria-controls="mode-menu">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>
+      </button>
+      <div id="mode-menu" class="mode-menu" hidden>
+        <button type="button" id="mode-sub-btn" aria-expanded="false" aria-controls="mode-sub">Mode</button>
+        <div id="mode-sub" class="mode-group" role="group" aria-label="Mode" hidden>
+          <p>Mode (before Start)</p>
+          <button type="button" data-mode="onshore">Onshore</button>
+          <button type="button" data-mode="offshore">Offshore</button>
+        </div>
+        <button type="button" id="chart-btn">Chart</button>
+        <button type="button" id="chrono-export">Export file</button>
+      </div>
+    </header>
+
+    <main>
+      <div id="chrono-capture"></div>
+      <div id="chrono-note" role="status"></div>
+    </main>
+
+    <script src="chrono-core.js"></script>
+    <script src="chrono-capture.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        var KEY = "chrono-mobile-current";
+        var C = window.ChronoCore;
+        var note = document.getElementById("chrono-note");
+
+        // Storage on this phone: the session survives a reload or a closed tab; export it to keep it
+        var storage = {
+          load: function () {
+            try {
+              var raw = localStorage.getItem(KEY);
+              return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+              return null;
+            }
+          },
+          save: function (doc) {
+            try {
+              localStorage.setItem(KEY, JSON.stringify(doc));
+            } catch (e) {
+              note.textContent = "This phone does not keep the session: export the file now.";
+            }
+          },
+        };
+
+        var ui = ChronoUI.mountCapture(document.getElementById("chrono-capture"), { device: "mobile", title: "", storage: storage, sequential: true, modeMenu: true, chartInMenu: true });
+
+        function fileName(doc) {
+          var d = new Date(doc.createdAt);
+          var stamp = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") + "_" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0");
+          // the title of the session goes in the file name, without characters that a file name cannot hold
+          var t = String(doc.title || "").trim().slice(0, 60).replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "");
+          return "chrono_" + (t ? t + "_" : "") + stamp + "_" + doc.sessionId.slice(0, 8) + ".json";
+        }
+
+        document.getElementById("chrono-export").addEventListener("click", async function () {
+          // the export is in the menu: close the menu once the file is handed over
+          modeMenu.hidden = true;
+          menuBtn.setAttribute("aria-expanded", "false");
+          var doc = ui.getDoc();
+          var out = Object.assign({}, doc, { exportedAt: new Date().toISOString() });
+          var text = JSON.stringify(out, null, 2);
+          var name = fileName(out);
+          var file = new File([text], name, { type: "application/json" });
+          try {
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({ files: [file], title: name });
+              note.textContent = "Shared: " + name;
+              return;
+            }
+          } catch (e) {
+            if (e && e.name === "AbortError") return;
+          }
+          var url = URL.createObjectURL(file);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+          note.textContent = "Downloaded: " + name;
+        });
+
+        // Mode menu (top right): the mode can change only before Start
+        var menuBtn = document.getElementById("mode-menu-btn");
+        var modeMenu = document.getElementById("mode-menu");
+        var modeSub = document.getElementById("mode-sub");
+        var modeSubBtn = document.getElementById("mode-sub-btn");
+        function markMode() {
+          var current = ui.getDoc().mode;
+          modeMenu.querySelectorAll("button[data-mode]").forEach(function (b) {
+            b.setAttribute("aria-pressed", String(b.dataset.mode === current));
+          });
+          modeSubBtn.textContent = "Mode: " + (current === "offshore" ? "Offshore" : "Onshore");
+        }
+        // the veil follows the menu: shown when it opens, hidden when it closes; a tap on the veil closes the menu
+        var menuOverlay = document.getElementById("menu-overlay");
+        new MutationObserver(function () { menuOverlay.hidden = modeMenu.hidden; })
+          .observe(modeMenu, { attributes: true, attributeFilter: ["hidden"] });
+        menuOverlay.addEventListener("click", function () {
+          modeMenu.hidden = true;
+          menuBtn.setAttribute("aria-expanded", "false");
+        });
+
+        // Mode is a sub-menu: it opens its two choices
+        modeSubBtn.addEventListener("click", function () {
+          modeSub.hidden = !modeSub.hidden;
+          modeSubBtn.setAttribute("aria-expanded", String(!modeSub.hidden));
+          markMode();
+        });
+        menuBtn.addEventListener("click", function () {
+          markMode();
+          modeMenu.hidden = !modeMenu.hidden;
+          menuBtn.setAttribute("aria-expanded", String(!modeMenu.hidden));
+        });
+        // a tap outside the menu closes it
+        document.addEventListener("click", function (ev) {
+          if (modeMenu.hidden) return;
+          if (modeMenu.contains(ev.target) || menuBtn.contains(ev.target)) return;
+          modeMenu.hidden = true;
+          menuBtn.setAttribute("aria-expanded", "false");
+        });
+        modeMenu.addEventListener("click", async function (ev) {
+          var b = ev.target.closest("button[data-mode]");
+          if (!b) return;
+          var ok = await ui.setMode(b.dataset.mode);
+          note.textContent = ok ? "" : "The mode cannot change once the session has started.";
+          // only the Mode choices close: the menu stays open and shows the new mode
+          modeSub.hidden = true;
+          modeSubBtn.setAttribute("aria-expanded", "false");
+          markMode();
+        });
+
+        // Chart from the menu: opens the chart page, which reads the session of this phone
+        document.getElementById("chart-btn").addEventListener("click", function () {
+          window.location.href = "chart.html";
+        });
+
+        if ("serviceWorker" in navigator) {
+          try {
+            navigator.serviceWorker.register("sw.js");
+          } catch (e) { /* offline cache not available on this address (HTTPS needed) */ }
+        }
+      })();
+    </script>
+  </body>
+</html>

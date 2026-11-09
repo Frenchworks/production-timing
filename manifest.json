@@ -1,0 +1,8 @@
+{
+  "name": "Chrono onshore",
+  "short_name": "Chrono",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#456a83"
+}

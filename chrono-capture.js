@@ -1,0 +1,260 @@
+/*
+ * Chrono screen, shared by the PC page and the mobile page.
+ *   ChronoUI.mountCapture(el, { device, title, storage }) -> { getDoc, refresh }
+ *   ChronoUI.renderReport(el, doc)
+ * storage: { load() -> doc|null, save(doc) } (may return a promise).
+ * The mode (onshore or offshore) is chosen before Start; it sets the step buttons, columns and chart.
+ */
+(function (root) {
+  "use strict";
+  const C = root.ChronoCore;
+
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const clock = (t) => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+  function stepHeader(s) {
+    return '<th title="' + esc(s.label) + '">' + esc(s.col) + "<br><small>" + esc(s.label) + "</small></th>";
+  }
+
+  // Table of the records: one row per weld, the largest step of each row is highlighted
+  function tableHtml(r) {
+    const steps = C.stepsOf(r.mode);
+    const head = "<tr><th>KP</th><th>Weld</th><th>Start</th>" + steps.map(stepHeader).join("") + "<th>Max</th></tr>";
+    const rows = r.records
+      .map((rec) => {
+        const label = rec.open ? "open" : rec.weldLabel;
+        const cells = steps
+          .map((s) => {
+            const v = rec.durations[s.type];
+            const hl = rec.highlight.indexOf(s.type) >= 0 ? ' class="chrono-max"' : "";
+            return "<td" + hl + ">" + (typeof v === "number" ? C.fmt(v) : "") + "</td>";
+          })
+          .join("");
+        return "<tr><td>" + esc(rec.kp) + "</td><td>" + esc(label) + "</td><td>" + clock(rec.start) + "</td>" + cells + "<td>" + C.fmt(rec.maxSec) + "</td></tr>";
+      })
+      .join("");
+    const total = '<tr class="chrono-sum"><td colspan="2">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + "<td></td></tr>";
+    const avg = '<tr class="chrono-sum"><td colspan="2">Average</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].avg) + "</td>").join("") + "<td></td></tr>";
+    return '<div class="chrono-table-wrap"><table class="chrono-table"><thead>' + head + "</thead><tbody>" + rows + total + avg + "</tbody></table></div>";
+  }
+
+  // Bars: average and total per step, like the chart of the sheet
+  function chartHtml(r) {
+    const steps = C.stepsOf(r.mode);
+    // the bottom margin holds the step names, written on a slope under each bar
+    const W = 640, H = 300, M = { l: 48, r: 12, t: 16, b: 110 };
+    const plotW = W - M.l - M.r, plotH = H - M.t - M.b;
+    const totals = steps.map((s) => r.columns[s.type].total || 0);
+    const avgs = steps.map((s) => r.columns[s.type].avg || 0);
+    const max = Math.max(1, ...totals, ...avgs);
+    const slot = plotW / steps.length;
+    const barW = slot * 0.36;
+    let out = '<svg class="chrono-chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Average and total per step">';
+    for (let i = 0; i <= 4; i++) {
+      const y = M.t + (plotH * i) / 4;
+      out += '<line x1="' + M.l + '" x2="' + (W - M.r) + '" y1="' + y + '" y2="' + y + '" stroke="#d7d8d9" stroke-dasharray="3 3"/>';
+      out += '<text x="' + (M.l - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + C.fmt(max * (1 - i / 4)) + "</text>";
+    }
+    steps.forEach((s, i) => {
+      const x0 = M.l + i * slot + slot * 0.15;
+      const hT = (totals[i] / max) * plotH;
+      const hA = (avgs[i] / max) * plotH;
+      out += '<rect x="' + x0 + '" y="' + (M.t + plotH - hT) + '" width="' + barW + '" height="' + hT + '" fill="#6A99AD"><title>' + esc(s.label) + " total " + C.fmt(totals[i]) + "</title></rect>";
+      out += '<rect x="' + (x0 + barW + 2) + '" y="' + (M.t + plotH - hA) + '" width="' + barW + '" height="' + hA + '" fill="#C8DC1B"><title>' + esc(s.label) + " average " + C.fmt(avgs[i]) + "</title></rect>";
+      // the number and the name of the step, on a slope under the bar
+      const ax = M.l + i * slot + slot / 2;
+      const ay = M.t + plotH + 14;
+      out += '<text x="' + ax + '" y="' + ay + '" text-anchor="end" transform="rotate(-35 ' + ax + " " + ay + ')">' + (i + 1) + " " + esc(s.label) + "</text>";
+    });
+    out += '<rect x="' + M.l + '" y="2" width="10" height="10" fill="#6A99AD"/><text x="' + (M.l + 14) + '" y="11">Total</text>';
+    out += '<rect x="' + (M.l + 70) + '" y="2" width="10" height="10" fill="#C8DC1B"/><text x="' + (M.l + 84) + '" y="11">Average</text>';
+    // the numbers under the bars, with the name of each step
+    const legend = steps.map((s, i) => "<li><b>" + (i + 1) + "</b> " + esc(s.label) + "</li>").join("");
+    return out + "</svg>" + '<ol class="chrono-legend">' + legend + "</ol>";
+  }
+
+  function summaryHtml(r) {
+    return '<div class="chrono-summary"><span>Joints <b>' + r.joints + "</b></span><span>Total <b>" + C.fmt(r.totalSeconds) + "</b></span><span>Average per joint <b>" + C.fmt(r.avgPerJoint) + "</b></span></div>";
+  }
+
+  // noChart: the chart is shown elsewhere (from the menu), not under the table
+  function renderReport(el, doc, noChart) {
+    const r = C.buildRecords(doc);
+    el.innerHTML =
+      '<div class="chrono-report"><div class="chrono-mode-tag">' + esc(C.MODES[r.mode].label) + "</div>" +
+      summaryHtml(r) +
+      (r.records.length ? tableHtml(r) + (noChart ? "" : chartHtml(r)) : '<p class="small">No weld recorded yet.</p>') +
+      "</div>";
+  }
+
+  function mountCapture(el, opts) {
+    let doc = null;
+    const storage = opts.storage;
+
+    function newDoc(keepFromCurrent) {
+      return C.makeDocument({
+        device: opts.device,
+        title: opts.title || "",
+        mode: keepFromCurrent && doc ? doc.mode : C.DEFAULT_MODE,
+        firstWeldNumber: keepFromCurrent && doc ? doc.firstWeldNumber : 1,
+      });
+    }
+
+    async function persist() {
+      try {
+        await storage.save(doc);
+      } catch (e) {
+        console.error("chrono save failed", e);
+      }
+    }
+
+    function state() {
+      const r = C.buildRecords(doc);
+      const started = doc.events.some((e) => e.type === "start");
+      const stopped = r.sessionStop !== null;
+      return { r, started, running: started && !stopped, stopped };
+    }
+
+    function render() {
+      const s = state();
+      const mode = C.modeOf(doc);
+      const next = s.r.firstWeldNumber + s.r.joints;
+      // on the phone the mode is chosen from a menu in the page header (opts.modeMenu), not here
+      const modes = opts.modeMenu
+        ? ""
+        : '<select class="chrono-mode-select" aria-label="Mode"' + (s.started ? " disabled" : "") + ">" +
+          C.MODE_IDS.map((id) => '<option value="' + id + '"' + (id === mode ? " selected" : "") + ">" + esc(C.MODES[id].label) + "</option>").join("") +
+          "</select>";
+      const allSteps = C.stepsOf(mode);
+      const lastRec = s.r.records.length ? s.r.records[s.r.records.length - 1] : null;
+      const openRec = lastRec && lastRec.open ? lastRec : null;
+      const pressed = openRec ? openRec.steps : {};
+      const passed = openRec ? openRec.skipped || {} : {};
+      const isLeft = (st) => typeof pressed[st.type] !== "number" && !passed[st.type];
+      const nextStep = allSteps.find(isLeft);
+      let stepButtons;
+      if (opts.sequential && s.running) {
+        // one step at a time: the steps done or passed of this weld, then the next one with a small "Pass" button
+        const chips = allSteps
+          .filter((st) => typeof pressed[st.type] === "number" || passed[st.type])
+          .map((st) => '<span class="chrono-done">' + esc(st.button) + " <b>" + (typeof pressed[st.type] === "number" ? C.fmt(openRec.durations[st.type]) : "pass") + "</b></span>")
+          .join("");
+        stepButtons = '<div class="chrono-done-list">' + chips + "</div>" +
+          (nextStep
+            ? '<div class="chrono-next-row"><button type="button" class="chrono-btn step next" data-type="' + nextStep.type + '">' + esc(nextStep.button) + '</button>' +
+              '<button type="button" class="chrono-btn pass" data-type="skip" data-step="' + nextStep.type + '">Pass</button></div>'
+            : "");
+      } else {
+        // on the PC every step is shown; any order, all optional
+        stepButtons = allSteps
+          .map((st) => '<button type="button" class="chrono-btn step" data-type="' + st.type + '"' + (s.running ? "" : " disabled") + ">" + esc(st.button) + "</button>")
+          .join("");
+      }
+      const body =
+        '<div class="chrono-head">' +
+        '<label class="chrono-field">Title<input type="text" class="chrono-title" value="' + esc(doc.title) + '"' + (s.started ? " disabled" : "") + "></label>" +
+        // KP and first weld side by side on one line
+        '<div class="chrono-pair">' +
+        '<label class="chrono-field">KP<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" class="chrono-kp" value="' + (doc.kp === null || doc.kp === undefined ? "" : doc.kp) + '"' + (s.started ? " disabled" : "") + "></label>" +
+        '<label class="chrono-field">First weld<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="chrono-first" value="' + doc.firstWeldNumber + '"' + (s.started ? " disabled" : "") + "></label>" +
+        "</div>" +
+        "</div>" +
+        '<div class="chrono-modes" role="group" aria-label="Mode">' + modes + "</div>" +
+        '<div class="chrono-status">' +
+        (s.running ? "Running · next weld n° " + next : s.stopped ? "Stopped · " + s.r.joints + " welds" : "Not started") +
+        "</div>" +
+        '<div class="chrono-main">' +
+        (s.started
+          ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
+          : '<button type="button" class="chrono-btn start" data-type="start">Start</button>') +
+        '<div class="chrono-steps">' + stepButtons + "</div>" +
+        '<div class="chrono-row">' +
+        '<button type="button" class="chrono-btn stop" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
+        '<button type="button" class="chrono-btn secondary" data-type="cancel"' + (doc.events.length ? "" : " disabled") + ">Cancel last</button>" +
+        (s.stopped ? '<button type="button" class="chrono-btn secondary next" data-type="new">New session</button>' : "") +
+        "</div></div>" +
+        '<div class="chrono-report-slot"></div>';
+      el.innerHTML = '<div class="chrono">' + body + "</div>";
+      renderReport(el.querySelector(".chrono-report-slot"), doc, !!opts.chartInMenu);
+    }
+
+    el.addEventListener("click", async (ev) => {
+      const modeBtn = ev.target.closest("button[data-mode]");
+      if (modeBtn) {
+        if (modeBtn.disabled || doc.events.length) return;
+        doc.mode = modeBtn.dataset.mode;
+        await persist();
+        return render();
+      }
+      const b = ev.target.closest("button[data-type]");
+      if (!b || b.disabled) return;
+      const type = b.dataset.type;
+      if (type === "cancel") doc.events = C.undo(doc.events);
+      else if (type === "new") doc = newDoc(true);
+      else {
+        const t = new Date().toISOString();
+        const stepType = type === "skip" ? b.dataset.step : type;
+        if (type === "skip") doc.events.push({ type: "skip", step: stepType, t });
+        else doc.events.push({ type, t });
+        // one step at a time: the last step of the cycle (pressed or passed) closes the weld, and the next weld starts
+        const steps = C.stepsOf(C.modeOf(doc));
+        if (opts.sequential && stepType === steps[steps.length - 1].type) doc.events.push({ type: "weld", t });
+      }
+      await persist();
+      render();
+    });
+
+    el.addEventListener("change", async (ev) => {
+      if (ev.target.classList.contains("chrono-mode-select")) {
+        // the mode can change only before Start
+        if (doc.events.length) return render();
+        doc.mode = ev.target.value;
+      }
+      if (ev.target.classList.contains("chrono-title")) doc.title = ev.target.value;
+      // KP and first weld are numbers only: anything else is removed
+      if (ev.target.classList.contains("chrono-kp")) {
+        // the KP applies to the welds closed from now on
+        const digits = ev.target.value.replace(/\D/g, "");
+        doc.kp = digits === "" ? null : parseInt(digits, 10);
+      }
+      if (ev.target.classList.contains("chrono-first")) {
+        const digits = ev.target.value.replace(/\D/g, "");
+        doc.firstWeldNumber = digits === "" ? 1 : parseInt(digits, 10);
+      }
+      await persist();
+      render();
+    });
+
+    (async function init() {
+      let loaded = null;
+      try {
+        loaded = await storage.load();
+      } catch (e) {
+        console.error("chrono load failed", e);
+      }
+      doc = loaded && loaded.format === C.FORMAT ? loaded : newDoc(false);
+      render();
+    })();
+
+    return {
+      getDoc: () => doc,
+      refresh: render,
+      // returns false when the mode cannot change (the session has started)
+      setMode: async function (mode) {
+        if (doc.events.length) return false;
+        doc.mode = C.MODE_IDS.indexOf(mode) >= 0 ? mode : C.DEFAULT_MODE;
+        await persist();
+        render();
+        return true;
+      },
+    };
+  }
+
+  // the chart alone, for the menu of the phone page
+  function renderChart(doc) {
+    const r = C.buildRecords(doc);
+    return r.records.length ? chartHtml(r) : '<p class="small">No weld recorded yet.</p>';
+  }
+
+  root.ChronoUI = { mountCapture, renderReport, renderChart };
+})(typeof self !== "undefined" ? self : this);

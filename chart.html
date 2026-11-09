@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#456a83">
+    <link rel="stylesheet" href="chrono.css">
+    <title>Production Timing · Chart</title>
+    <style>
+      /* same colours as the PC app (style.css for light, dark.css for dark) */
+      :root { --bg: #fff; --fg: #222; --muted: #666; --border: #98abb3; --boxborder: #d6d6d6; --primary: #6A99AD; --darken: #334A5C; --accent: #C8DC1B; --accent-hover: #BCCF19; --on-accent: #2D4455; --card: #f8f8f8; --card-light: #eef2f5; --title: #2D4455; --text: #658091; --dark-text: #333333; --input-bg: #f8fafc; }
+      @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #242424; --fg: #f0f0f0; --muted: #c2c2c2; --border: #474747; --boxborder: #4a4a4a; --darken: #4d768a; --accent: #C8DC1B; --accent-hover: #a9be17; --on-accent: #1a1a1a; --card: #2d2d2d; --card-light: #363636; --title: #d0e2f2; --text: #b7c8d5; --dark-text: #f0f0f0; --input-bg: #303030; color-scheme: dark; } }
+      html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+      body { padding: max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); box-sizing: border-box; }
+      header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+      header h1 { font-size: 1.2em; margin: 0; color: var(--title); }
+      .back { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--card); color: var(--fg); font-weight: bold; text-decoration: none; }
+      #chart-info { width: 100%; margin: 0; font-size: 0.85em; opacity: 0.85; }
+      #chart-empty { font-size: 0.9em; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="back" href="./">← Back</a>
+      <h1>Chart</h1>
+      <p id="chart-info"></p>
+    </header>
+    <main>
+      <div id="chrono-chart-body"></div>
+      <p id="chart-empty" hidden>No session on this phone yet. Start a session on the timing page first.</p>
+    </main>
+
+    <script src="chrono-core.js"></script>
+    <script src="chrono-capture.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        var KEY = "chrono-mobile-current";
+        var doc = null;
+        try {
+          var raw = localStorage.getItem(KEY);
+          doc = raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          doc = null;
+        }
+        if (!doc || doc.format !== ChronoCore.FORMAT) {
+          document.getElementById("chart-empty").hidden = false;
+          return;
+        }
+        var r = ChronoCore.buildRecords(doc);
+        var label = ChronoCore.MODES[r.mode].label;
+        document.getElementById("chart-info").textContent = (doc.title ? doc.title + " · " : "") + label + " · " + r.joints + " welds";
+        document.getElementById("chrono-chart-body").innerHTML = ChronoUI.renderChart(doc);
+      })();
+    </script>
+  </body>
+</html>

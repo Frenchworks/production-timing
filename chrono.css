@@ -1,0 +1,92 @@
+/* Chrono screen: shared by the PC page and the mobile page. Colours come from the page tokens (--card, --fg, --boxborder...). */
+.chrono { display: flex; flex-direction: column; gap: 12px; color: var(--fg, #222); }
+.chrono-head { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.chrono-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; flex: 1 1 100%; min-width: 0; }
+.chrono-pair .chrono-field { width: 100%; min-width: 0; max-width: 100%; }
+.chrono-pair .chrono-field input { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; field-sizing: fixed; }
+.chrono-field { display: flex; flex-direction: column; gap: 2px; font-size: 0.8em; margin: 0; min-width: 0; }
+.chrono-field input { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; field-sizing: fixed; }
+.chrono-head .chrono-field:first-child { flex: 1 1 260px; }
+.chrono-status { font-weight: bold; font-size: 0.9em; color: var(--title, #2D4455); }
+.chrono-main { display: flex; flex-direction: column; gap: 10px; }
+.chrono-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.chrono-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chrono-modes { display: flex; gap: 6px; }
+.chrono-mode-select { width: 100%; min-height: 44px; font-size: 1em; padding: 8px 10px; border-radius: 6px; }
+/* buttons with the rounded corners of the PC app (6px), the accent colours and the secondary look of the PC app */
+.chrono button, .chrono-btn { border-radius: 6px; }
+.chrono-btn { background: var(--accent, #C8DC1B); color: var(--on-accent, #2D4455); font-weight: bold; border: 0; }
+.chrono-btn.secondary { background: var(--bg, #fff); color: var(--fg, #222); border: 1px solid var(--boxborder, #CFCFCF); font-weight: bold; }
+.chrono-btn:disabled { opacity: 0.4; }
+.chrono-mode { flex: 1 1 0; min-height: 40px; background: var(--card, #f8f8f8); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); }
+.chrono-mode.active { background: var(--accent, #C8DC1B); color: var(--on-accent, #2D4455); border-color: var(--darken, #334A5C); }
+.chrono-mode:disabled { opacity: 0.5; cursor: not-allowed; }
+.chrono-mode-tag { display: inline-block; font-size: 0.75em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 4px; background: var(--card-light, #eef2f5); color: var(--title, #2D4455); }
+.chrono-btn { height: auto; min-height: 44px; padding: 10px 12px; font-size: 0.95em; width: 100%; }
+.chrono-btn.start { background: var(--accent, #C8DC1B); }
+.chrono-btn.stop { background: #BE0000; color: #fff; text-shadow: none; }
+.chrono-btn.step { background: var(--card, #f8f8f8); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); }
+.chrono-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.chrono-row .chrono-btn { width: auto; flex: 1 1 140px; }
+.chrono-done-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chrono-next-row { display: flex; gap: 8px; align-items: stretch; }
+.chrono-next-row .next { flex: 1 1 auto; width: auto; }
+.chrono-btn.pass { flex: 0 0 auto; width: auto; min-height: 0; padding: 6px 12px; font-size: 0.8em; background: var(--card, #f8f8f8); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); }
+.chrono-done b { font-weight: bold; }
+
+/* same look as the PC app: a field with the accent colour when it is selected, and the selected text in the accent colour */
+.chrono input[type="text"], .chrono input[type="number"] {
+  color: var(--title, #2D4455);
+  background: var(--input-bg, #f8fafc);
+  border: 1px solid var(--border, #98abb3);
+  border-radius: 6px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,.1);
+  outline: none;
+  transition: .5s ease;
+}
+.chrono input[type="text"]:focus, .chrono input[type="number"]:focus {
+  border-color: var(--accent, #C8DC1B);
+  background: var(--input-focus-bg, #fff);
+  box-shadow: 0 0 2px var(--accent, #C8DC1B);
+}
+.chrono ::selection, ::selection { background-color: var(--accent, #C8DC1B); color: #000; }
+.chrono input, .chrono button { -webkit-tap-highlight-color: transparent; }
+/* the cursor and the form controls take the dark colour of the PC app, not the system blue */
+.chrono input, .chrono select, .chrono-mode-select { caret-color: var(--darken, #334A5C); accent-color: var(--darken, #334A5C); }
+.chrono input[type="text"], .chrono input[type="number"], .chrono-mode-select { color: var(--title, #2D4455); -webkit-text-fill-color: var(--title, #2D4455); }
+.chrono-done { font-size: 0.8em; padding: 4px 8px; border-radius: 6px; background: var(--card-light, #eef2f5); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); }
+.chrono-btn.step.next { background: var(--accent, #C8DC1B); color: var(--on-accent, #2D4455); border-color: var(--darken, #334A5C); font-size: 1.1em; min-height: 64px; }
+
+.chrono-report { display: flex; flex-direction: column; gap: 10px; }
+.chrono-summary { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.9em; }
+.chrono-table-wrap { overflow-x: auto; max-width: 100%; }
+.chrono-table { border-collapse: collapse; font-size: 0.8em; width: 100%; color: var(--fg, #222); }
+.chrono-table th, .chrono-table td { border: 1px solid var(--boxborder, #d6d6d6); padding: 4px 6px; text-align: center; white-space: nowrap; }
+.chrono-table th { background: #456a83; color: #fff; font-weight: bold; }
+.chrono-table th small { font-weight: normal; font-size: 0.85em; white-space: normal; }
+.chrono-table td.chrono-max { background: #f6c6c6; color: #000; font-weight: bold; }
+.chrono-table tr.chrono-sum td { font-weight: bold; background: var(--card-light, #eef2f5); }
+.chrono-chart { width: 100%; height: auto; max-width: 640px; display: block; }
+.chrono-chart text { fill: var(--fg, #222); font-size: 11px; font-family: Arial, sans-serif; }
+.chrono-legend { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; font-size: 0.8em; }
+.chrono-legend b { color: var(--title, #2D4455); }
+
+.chrono-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.chrono-list { display: flex; flex-direction: column; gap: 6px; }
+.chrono-session { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--boxborder, #d6d6d6); border-radius: 6px; font-size: 0.85em; }
+.chrono-session-actions { display: flex; gap: 6px; }
+
+/* phone: one column, large buttons, no sideways scroll on the page */
+@media (max-width: 520px) {
+  .chrono-steps { grid-template-columns: 1fr; }
+  .chrono-btn { min-height: 46px; font-size: 1em; }
+  .chrono-btn.step.next { min-height: 62px; font-size: 1.1em; }
+  .chrono-field { width: 100%; font-size: 0.9em; }
+  /* 16px or more: iPhone Safari zooms in on a field with a smaller text */
+  .chrono-field input { min-height: 38px; font-size: 16px; }
+  .chrono-mode { min-height: 44px; font-size: 1em; }
+  .chrono-status { font-size: 1em; }
+  .chrono-done { font-size: 0.95em; padding: 8px 10px; }
+  .chrono-summary { font-size: 1em; }
+  .chrono-table { font-size: 0.95em; }
+}
