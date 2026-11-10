@@ -124,6 +124,12 @@
   .chrono-head { flex-wrap: wrap; }
   /* phone: space between the stacked buttons */
   .chrono-steps { gap: 10px; }
+  /* phone: KP, Weld, Start and Max take the width of their content; the step columns share the rest */
+  .chrono-table { table-layout: auto; }
+  .chrono-table th:first-child, .chrono-table td:first-child,
+  .chrono-table th:nth-child(2), .chrono-table td:nth-child(2),
+  .chrono-table th:nth-child(3), .chrono-table td:nth-child(3),
+  .chrono-table th:last-child, .chrono-table td:last-child { width: 1%; white-space: nowrap; }
   .chrono-head > .chrono-field { width: 100%; flex: 1 1 100%; }
   .chrono-pair { flex: 1 1 100%; }
   .chrono-steps { grid-auto-flow: row; grid-template-columns: 1fr; }
