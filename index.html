@@ -49,6 +49,14 @@
   </head>
   <body>
     <div id="menu-overlay" class="menu-overlay" hidden></div>
+
+    <div id="chart-empty-modal" class="chrono-modal" hidden>
+      <div class="chrono-modal-card message-box" role="dialog" aria-label="Chart">
+        <h3>Chart</h3>
+        <p>No weld recorded yet. The chart appears once at least one weld is recorded.</p>
+        <button type="button" id="chart-empty-close" class="chrono-modal-close" aria-label="Close">&times;</button>
+      </div>
+    </div>
     <header class="top">
       <div>
         <h1>Production Timing</h1>
@@ -192,9 +200,20 @@
         });
 
         // Chart from the menu: opens the chart page, which reads the session of this phone
+        // without a weld there is no chart: a message window says so, instead of opening an empty page
+        var emptyModal = document.getElementById("chart-empty-modal");
         document.getElementById("chart-btn").addEventListener("click", function () {
+          var hasWelds = ChronoCore.buildRecords(ui.getDoc()).joints > 0;
+          modeMenu.hidden = true;
+          menuBtn.setAttribute("aria-expanded", "false");
+          if (!hasWelds) {
+            emptyModal.hidden = false;
+            return;
+          }
           window.location.href = "chart.html";
         });
+        document.getElementById("chart-empty-close").addEventListener("click", function () { emptyModal.hidden = true; });
+        emptyModal.addEventListener("click", function (ev) { if (ev.target === emptyModal) emptyModal.hidden = true; });
 
         if ("serviceWorker" in navigator) {
           try {
