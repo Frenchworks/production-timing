@@ -1,0 +1,23 @@
+/* Phone layout of the mobile page, on every screen (phone, tablet, computer).
+   Loaded after chrono.css, only by the mobile page: the PC app keeps its own layout. */
+.chrono .chrono-head { flex-wrap: wrap; }
+.chrono .chrono-head > .chrono-field { width: 100%; flex: 1 1 100%; }
+.chrono .chrono-pair { flex: 1 1 100%; }
+.chrono .chrono-field { width: 100%; font-size: 0.9em; }
+/* 16px or more: iPhone Safari zooms in on a field with a smaller text */
+.chrono .chrono-field input { min-height: 38px; font-size: 16px; }
+.chrono .chrono-mode { min-height: 44px; font-size: 1em; }
+.chrono .chrono-status { font-size: 1em; }
+.chrono .chrono-summary { font-size: 1em; }
+.chrono .chrono-done { font-size: 0.95em; padding: 8px 10px; }
+/* the step buttons stack in one column, Stop after the steps */
+.chrono .chrono-steps { grid-auto-flow: row; grid-template-columns: 1fr; gap: 10px; }
+.chrono .chrono-steps > .chrono-btn { margin: 0; min-height: 46px; font-size: 1em; padding: 6px 10px; white-space: normal; }
+.chrono .chrono-steps > .chrono-btn.start,
+.chrono .chrono-steps > .chrono-btn.weld,
+.chrono .chrono-steps > .chrono-btn.stop { grid-column: auto; }
+.chrono .chrono-steps > .chrono-btn.stop { order: 1; }
+.chrono .chrono-steps > .chrono-done-list,
+.chrono .chrono-steps > .chrono-next-row { grid-column: auto; }
+.chrono .chrono-spacer { display: none; }
+.chrono .chrono-btn.step.next { min-height: 62px; font-size: 1.1em; }
