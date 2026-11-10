@@ -177,7 +177,7 @@
         "</div>" +
         '<div class="chrono-steps" style="--n:' + allSteps.length + '">' +
         (s.started
-          ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
+          ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + (opts.sequential && s.running && nextStep ? " secondary" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
           : '<button type="button" class="chrono-btn start" data-type="start">Start</button>') +
         '<button type="button" class="chrono-btn stop" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
         stepButtons + '<i class="chrono-spacer"></i>' +

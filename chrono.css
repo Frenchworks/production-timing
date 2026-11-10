@@ -58,9 +58,13 @@
 .chrono-title-row h2 { margin: 0; }
 /* the QR icon of the button, larger than the default icon of the buttons */
 .chrono-title-row button i { font-size: 16px; margin-right: 8px; top: 0; }
-.chrono-modal { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+/* same window as the message boxes of the app: dark veil with a light blur, card with 6px corners */
+.chrono-modal { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
 .chrono-modal[hidden] { display: none; }
-.chrono-modal-card { width: 100%; max-width: 380px; max-height: 90vh; overflow: auto; box-sizing: border-box; padding: 16px; border-radius: 10px; background: var(--bg, #fff); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+/* the close button is a red cross in the top right corner of the window */
+.chrono-modal-close { position: absolute; top: 6px; right: 10px; width: auto; height: auto; min-height: 0; padding: 0 6px; margin: 0; background: none; border: 0; box-shadow: none; color: #BE0000; font-size: 28px; line-height: 1; font-weight: bold; cursor: pointer; }
+.chrono-modal-close:hover { background: none; color: #a00000; }
+.chrono-modal-card { position: relative; width: 100%; max-width: 400px; max-height: 90vh; overflow: auto; box-sizing: border-box; padding: 20px; border-radius: 6px; background: var(--bg, #fff); color: var(--fg, #222); border: 0; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: left; }
 .chrono-modal-card .chrono-qr { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 10px; }
 .chrono-modal-card canvas { max-width: 100%; height: auto; }
 
