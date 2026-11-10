@@ -12,7 +12,7 @@
 .chrono-status { font-weight: bold; font-size: 0.9em; color: var(--title, #2D4455); }
 .chrono-main { display: flex; flex-direction: column; gap: 10px; }
 /* on the PC the step buttons sit in the same columns as the table below: KP, Weld, Start (fixed), one per step, Max (fixed); on the phone they stack */
-.chrono-steps { display: grid; grid-template-columns: 56px 84px 80px repeat(var(--n, 5), minmax(0, 1fr)) 80px 80px 60px 200px; gap: 0; }
+.chrono-steps { display: grid; grid-template-columns: 54px 66px 80px repeat(var(--n, 5), minmax(0, 1fr)); gap: 0; }
 /* width auto: the button fills its column minus the margins, so the gap shows between the buttons */
 .chrono-steps > .chrono-btn { margin: 0 4px; width: auto; }
 /* Start (or Next weld) spans the KP and Weld columns, Stop sits in the Start column */
@@ -98,23 +98,29 @@
 .chrono-summary { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.9em; }
 /* the table takes the full width of the card; the columns share it, and the names of the steps wrap */
 .chrono-table-wrap { overflow-x: auto; width: 100%; max-width: 100%; }
-.chrono-table { border-collapse: collapse; font-size: 0.8em; width: 100%; table-layout: auto; color: var(--fg, #222); }
+.chrono-table { border-collapse: collapse; font-size: 0.8em; width: calc(100% + 290px); table-layout: auto; color: var(--fg, #222); }
 .chrono-table th, .chrono-table td { white-space: normal; }
 .chrono-table td { text-align: center; }
 /* fixed layout: the columns KP, Weld, Start and Max fit their content, and the step columns share the rest equally */
 .chrono-table { table-layout: fixed; }
 .chrono-table th.fit, .chrono-table td.fit { white-space: nowrap; }
+/* the headers of In the air and Clamp move wrap on two lines in their narrow columns */
+.chrono-table th.col-air, .chrono-table th.col-clamp { white-space: normal; }
 .chrono-table th, .chrono-table td { box-sizing: border-box; }
 /* fixed widths for KP, Weld, Start and Max (enough for their text); the step columns have no width and share the rest */
-.chrono-table th:first-child, .chrono-table td:first-child { width: 56px; }
-.chrono-table th:nth-child(2), .chrono-table td:nth-child(2) { width: 84px; }
+.chrono-table th:first-child, .chrono-table td:first-child { width: 54px; }
+.chrono-table th:nth-child(2), .chrono-table td:nth-child(2) { width: 66px; }
 .chrono-table th:nth-child(3), .chrono-table td:nth-child(3) { width: 80px; }
-.chrono-table .col-air { width: 80px; }
-.chrono-table .col-clamp { width: 80px; }
-.chrono-table .col-max { width: 60px; }
-.chrono-table .col-comment { width: 200px; text-align: left; white-space: normal; }
+.chrono-table .col-air { width: 64px; }
+.chrono-table .col-clamp { width: 64px; }
+.chrono-table .col-max { width: 52px; }
+.chrono-table .col-comment { width: 110px; text-align: left; white-space: normal; }
+/* the step columns keep a readable width: when the window is narrower, the table scrolls sideways instead of squeezing them */
+.chrono-table tr > :nth-child(n+4):not(.fit):not(.col-comment) { width: calc((100% - 490px) / 5); }
 .chrono-comment { width: 100%; min-width: 0; height: 28px; font-size: 0.9em; padding: 0 6px; box-sizing: border-box; }
 .chrono-table th, .chrono-table td { border: 1px solid var(--boxborder, #d6d6d6); padding: 4px 6px; text-align: center; white-space: nowrap; }
+/* step names wrap on several lines so that the columns fit the window */
+.chrono-table th { white-space: normal; }
 .chrono-table th { background: #456a83; color: #fff; font-weight: bold; }
 .chrono-table th small { font-weight: normal; font-size: 0.85em; white-space: normal; }
 .chrono-table td.chrono-max { background: #f6c6c6; color: #000; font-weight: bold; }
@@ -161,10 +167,11 @@
   .chrono-status { font-size: 1em; }
   .chrono-done { font-size: 0.95em; padding: 8px 10px; }
   .chrono-summary { font-size: 1em; }
-  .chrono-table { font-size: 0.95em; }
+  .chrono-table { font-size: 0.95em; width: 100%; }
+  .chrono-table tr > :nth-child(n+4):not(.fit):not(.col-comment) { width: auto; }
 }
 
 /* on the PC the Start, Stop and step buttons are taller, so they are easy to hit */
 @media (min-width: 521px) {
-  .chrono-steps > .chrono-btn { min-height: 46px; font-size: 0.82em; padding: 6px 4px; white-space: nowrap; }
+  .chrono-steps > .chrono-btn { min-height: 46px; font-size: 0.82em; padding: 6px 4px; white-space: normal; line-height: 1.15; }
 }

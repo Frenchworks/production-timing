@@ -180,7 +180,7 @@
           ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + (opts.sequential && s.running && nextStep ? " secondary" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
           : '<button type="button" class="chrono-btn start" data-type="start">Start</button>') +
         '<button type="button" class="chrono-btn stop" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
-        stepButtons + '<i class="chrono-spacer"></i><i class="chrono-spacer"></i><i class="chrono-spacer"></i><i class="chrono-spacer"></i>' +
+        stepButtons +
         "</div></div>" +
         '<div class="chrono-report-slot"></div>';
       // the mode pill goes into the slot given by the page, when there is one
