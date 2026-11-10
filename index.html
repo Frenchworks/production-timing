@@ -111,6 +111,7 @@
           },
         };
 
+        ChronoUI.setCumulativeSteps(true);
         var ui = ChronoUI.mountCapture(document.getElementById("chrono-capture"), { device: "mobile", title: "", storage: storage, sequential: true, modeMenu: true, chartInMenu: true });
 
         function fileName(doc) {

@@ -12,8 +12,11 @@
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const clock = (t) => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
+  // Step times: the duration of each step (PC, default), or the time since the start of the weld (cumulative, as the chrono workbook)
+  let cumulativeSteps = false;
+
   function stepHeader(s) {
-    return '<th title="' + esc(s.label) + '">' + esc(s.col) + "<br><small>" + esc(s.label) + "</small></th>";
+    return '<th title="' + esc(s.label) + '">' + esc(s.col) + "<br><small>" + esc(s.label) + (cumulativeSteps ? " (cumulative)" : "") + "</small></th>";
   }
 
   // Table of the records: one row per weld, the largest step of each row is highlighted
@@ -26,7 +29,7 @@
         const label = rec.open ? "open" : rec.weldLabel;
         const cells = steps
           .map((s) => {
-            const v = rec.durations[s.type];
+            const v = cumulativeSteps ? rec.steps[s.type] : rec.durations[s.type];
             const hl = rec.highlight.indexOf(s.type) >= 0 ? ' class="chrono-max"' : "";
             return "<td" + hl + ">" + (typeof v === "number" ? C.fmt(v) : "") + "</td>";
           })
@@ -282,5 +285,6 @@
     return r.records.length ? chartHtml(r) : '<p class="small">No weld recorded yet.</p>';
   }
 
-  root.ChronoUI = { mountCapture, renderReport, renderChart };
+  // the mobile page shows the cumulative step times; the PC keeps the durations
+  root.ChronoUI = { mountCapture, renderReport, renderChart, setCumulativeSteps(on) { cumulativeSteps = !!on; } };
 })(typeof self !== "undefined" ? self : this);
