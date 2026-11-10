@@ -1,6 +1,6 @@
 {
-  "name": "Chrono onshore",
-  "short_name": "Chrono",
+  "name": "Production Timing",
+  "short_name": "Timing",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
