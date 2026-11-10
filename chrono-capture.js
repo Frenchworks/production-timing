@@ -172,7 +172,8 @@
         // on the PC the first row holds Start (or Next weld) and Stop over the KP, Weld and Start columns; the steps sit over the table columns
         // Cancel last on the left and New session on the right, above the buttons
         '<div class="chrono-row">' +
-        '<button type="button" class="chrono-btn secondary" data-type="cancel"' + (doc.events.length ? "" : " disabled") + ">Cancel last</button>" +
+        // Cancel last appears only once the session has started
+        (doc.events.length ? '<button type="button" class="chrono-btn secondary" data-type="cancel">Cancel last</button>' : "") +
         (s.stopped ? '<button type="button" class="chrono-btn secondary next" data-type="new">New session</button>' : "") +
         "</div>" +
         '<div class="chrono-steps" style="--n:' + allSteps.length + '">' +
