@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#456a83">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="chrono.css">
     <title>Production Timing · Chart</title>
     <style>
@@ -17,6 +18,7 @@
       .back { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--card); color: var(--fg); font-weight: bold; text-decoration: none; }
       #chart-info { width: 100%; margin: 0; font-size: 0.85em; opacity: 0.85; }
       #chart-empty { font-size: 0.9em; }
+        body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: env(safe-area-inset-top, 0px); background: #456a83; z-index: 10; }
     </style>
   </head>
   <body>

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#456a83">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Production timing">
     <link rel="manifest" href="manifest.json">
@@ -46,6 +47,7 @@
       .mode-menu p { margin: 0; font-size: 0.8em; opacity: 0.8; }
       .mode-menu button { min-height: 48px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--bg); color: var(--fg); font-size: 1em; font-weight: bold; cursor: pointer; text-align: left; padding: 0 14px; }
       .mode-menu button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--darken); }
+        body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: env(safe-area-inset-top, 0px); background: #456a83; z-index: 10; }
     </style>
   </head>
   <body>
