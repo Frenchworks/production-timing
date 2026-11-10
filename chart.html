@@ -18,7 +18,9 @@
       .back { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--card); color: var(--fg); font-weight: bold; text-decoration: none; }
       #chart-info { width: 100%; margin: 0; font-size: 0.85em; opacity: 0.85; }
       #chart-empty { font-size: 0.9em; }
-        </style>
+              /* portrait: the title sits lower, under the status bar */
+      @media (orientation: portrait) { body { padding-top: max(36px, calc(env(safe-area-inset-top, 0px) + 24px)); } }
+    </style>
   </head>
   <body>
     <header>
