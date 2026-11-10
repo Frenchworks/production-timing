@@ -1,7 +1,9 @@
 /* Chrono screen: shared by the PC page and the mobile page. Colours come from the page tokens (--card, --fg, --boxborder...). */
 .chrono { display: flex; flex-direction: column; gap: 12px; color: var(--fg, #222); }
-.chrono-head { display: flex; flex-wrap: wrap; gap: 10px 16px; }
-.chrono-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; flex: 1 1 100%; min-width: 0; }
+/* title, KP and first weld on one line */
+.chrono-head { display: flex; flex-wrap: nowrap; align-items: flex-end; gap: 12px; }
+.chrono-head > .chrono-field { width: auto; flex: 2 1 0; min-width: 0; }
+.chrono-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; flex: 3 1 0; min-width: 0; }
 .chrono-pair .chrono-field { width: 100%; min-width: 0; max-width: 100%; }
 .chrono-pair .chrono-field input { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; field-sizing: fixed; }
 .chrono-field { display: flex; flex-direction: column; gap: 2px; font-size: 0.8em; margin: 0; min-width: 0; }
@@ -9,9 +11,25 @@
 .chrono-head .chrono-field:first-child { flex: 1 1 260px; }
 .chrono-status { font-weight: bold; font-size: 0.9em; color: var(--title, #2D4455); }
 .chrono-main { display: flex; flex-direction: column; gap: 10px; }
-.chrono-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.chrono-row { display: flex; flex-wrap: wrap; gap: 8px; }
+/* on the PC the step buttons sit in the same columns as the table below: KP, Weld, Start (fixed), one per step, Max (fixed); on the phone they stack */
+.chrono-steps { display: grid; grid-template-columns: 56px 84px 80px repeat(var(--n, 5), minmax(0, 1fr)) 60px; gap: 0; }
+/* width auto: the button fills its column minus the margins, so the gap shows between the buttons */
+.chrono-steps > .chrono-btn { margin: 0 4px; width: auto; }
+/* Start (or Next weld) spans the KP and Weld columns, Stop sits in the Start column */
+.chrono-steps > .chrono-btn.start, .chrono-steps > .chrono-btn.weld { grid-column: 1 / span 2; }
+.chrono-steps > .chrono-btn.stop { grid-column: 3; }
+.chrono-spacer { display: block; }
+/* Cancel last on the left, New session on the right */
+.chrono-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 .chrono-modes { display: flex; gap: 6px; }
+/* the mode as a pill of two choices, as the pills of the PC app */
+.chrono-mode-pill { display: inline-flex; border: 1px solid var(--border, #98abb3); border-radius: 6px; height: 32px; font-size: 0.8em; font-weight: bold; overflow: hidden; }
+.chrono-mode-pill span { padding: 7px 14px; cursor: pointer; user-select: none; background: var(--bg, #fff); color: var(--fg, #222); display: flex; align-items: center; }
+.chrono-mode-pill span + span { border-left: 1px solid var(--border, #98abb3); }
+.chrono-mode-pill span:hover { background: var(--card, #f8f8f8); }
+.chrono-mode-pill span.active { background: var(--primary, #6A99AD); color: #fff; }
+.chrono-mode-pill.disabled span { opacity: 0.5; cursor: not-allowed; }
+.chrono-mode-pill.disabled span:hover { background: var(--bg, #fff); }
 .chrono-mode-select { width: 100%; min-height: 44px; font-size: 1em; padding: 8px 10px; border-radius: 6px; }
 /* buttons with the rounded corners of the PC app (6px), the accent colours and the secondary look of the PC app */
 .chrono button, .chrono-btn { border-radius: 6px; }
@@ -28,7 +46,7 @@
 .chrono-btn.stop { background: #BE0000; color: #fff; text-shadow: none; }
 .chrono-btn.step { background: var(--card, #f8f8f8); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); }
 .chrono-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.chrono-row .chrono-btn { width: auto; flex: 1 1 140px; }
+.chrono-row .chrono-btn { width: auto; flex: 0 0 auto; min-width: 160px; }
 .chrono-done-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .chrono-next-row { display: flex; gap: 8px; align-items: stretch; }
 .chrono-next-row .next { flex: 1 1 auto; width: auto; }
@@ -38,6 +56,8 @@
 /* title row with a button on the right, and the modal window that opens from it */
 .chrono-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .chrono-title-row h2 { margin: 0; }
+/* the QR icon of the button, larger than the default icon of the buttons */
+.chrono-title-row button i { font-size: 16px; margin-right: 8px; top: 0; }
 .chrono-modal { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
 .chrono-modal[hidden] { display: none; }
 .chrono-modal-card { width: 100%; max-width: 380px; max-height: 90vh; overflow: auto; box-sizing: border-box; padding: 16px; border-radius: 10px; background: var(--bg, #fff); color: var(--fg, #222); border: 1px solid var(--boxborder, #d6d6d6); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
@@ -69,8 +89,20 @@
 
 .chrono-report { display: flex; flex-direction: column; gap: 10px; }
 .chrono-summary { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.9em; }
-.chrono-table-wrap { overflow-x: auto; max-width: 100%; }
-.chrono-table { border-collapse: collapse; font-size: 0.8em; width: 100%; color: var(--fg, #222); }
+/* the table takes the full width of the card; the columns share it, and the names of the steps wrap */
+.chrono-table-wrap { overflow-x: auto; width: 100%; max-width: 100%; }
+.chrono-table { border-collapse: collapse; font-size: 0.8em; width: 100%; table-layout: auto; color: var(--fg, #222); }
+.chrono-table th, .chrono-table td { white-space: normal; }
+.chrono-table td { text-align: center; }
+/* fixed layout: the columns KP, Weld, Start and Max fit their content, and the step columns share the rest equally */
+.chrono-table { table-layout: fixed; }
+.chrono-table th.fit, .chrono-table td.fit { white-space: nowrap; }
+.chrono-table th, .chrono-table td { box-sizing: border-box; }
+/* fixed widths for KP, Weld, Start and Max (enough for their text); the step columns have no width and share the rest */
+.chrono-table th:first-child, .chrono-table td:first-child { width: 56px; }
+.chrono-table th:nth-child(2), .chrono-table td:nth-child(2) { width: 84px; }
+.chrono-table th:nth-child(3), .chrono-table td:nth-child(3) { width: 80px; }
+.chrono-table th:last-child, .chrono-table td:last-child { width: 60px; }
 .chrono-table th, .chrono-table td { border: 1px solid var(--boxborder, #d6d6d6); padding: 4px 6px; text-align: center; white-space: nowrap; }
 .chrono-table th { background: #456a83; color: #fff; font-weight: bold; }
 .chrono-table th small { font-weight: normal; font-size: 0.85em; white-space: normal; }
@@ -88,7 +120,10 @@
 
 /* phone: one column, large buttons, no sideways scroll on the page */
 @media (max-width: 520px) {
-  .chrono-steps { grid-template-columns: 1fr; }
+  .chrono-steps { grid-auto-flow: row; grid-template-columns: 1fr; }
+  .chrono-steps > .chrono-btn { margin: 0; }
+  .chrono-steps > .chrono-btn.start, .chrono-steps > .chrono-btn.weld, .chrono-steps > .chrono-btn.stop { grid-column: auto; }
+  .chrono-spacer { display: none; }
   .chrono-btn { min-height: 46px; font-size: 1em; }
   .chrono-btn.step.next { min-height: 62px; font-size: 1.1em; }
   .chrono-field { width: 100%; font-size: 0.9em; }
@@ -99,4 +134,9 @@
   .chrono-done { font-size: 0.95em; padding: 8px 10px; }
   .chrono-summary { font-size: 1em; }
   .chrono-table { font-size: 0.95em; }
+}
+
+/* on the PC the Start, Stop and step buttons are taller, so they are easy to hit */
+@media (min-width: 521px) {
+  .chrono-steps > .chrono-btn { min-height: 46px; font-size: 0.82em; padding: 6px 4px; white-space: nowrap; }
 }

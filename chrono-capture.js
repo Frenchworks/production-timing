@@ -19,7 +19,8 @@
   // Table of the records: one row per weld, the largest step of each row is highlighted
   function tableHtml(r) {
     const steps = C.stepsOf(r.mode);
-    const head = "<tr><th>KP</th><th>Weld</th><th>Start</th>" + steps.map(stepHeader).join("") + "<th>Max</th></tr>";
+    // KP, Weld, Start and Max take the width of their content (class fit); the step columns share the rest equally
+    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit">Start</th>' + steps.map(stepHeader).join("") + '<th class="fit">Max</th></tr>';
     const rows = r.records
       .map((rec) => {
         const label = rec.open ? "open" : rec.weldLabel;
@@ -30,7 +31,7 @@
             return "<td" + hl + ">" + (typeof v === "number" ? C.fmt(v) : "") + "</td>";
           })
           .join("");
-        return "<tr><td>" + esc(rec.kp) + "</td><td>" + esc(label) + "</td><td>" + clock(rec.start) + "</td>" + cells + "<td>" + C.fmt(rec.maxSec) + "</td></tr>";
+        return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + '</td><td class="fit">' + clock(rec.start) + "</td>" + cells + '<td class="fit">' + C.fmt(rec.maxSec) + "</td></tr>";
       })
       .join("");
     const total = '<tr class="chrono-sum"><td colspan="2">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + "<td></td></tr>";
@@ -78,11 +79,12 @@
   }
 
   // noChart: the chart is shown elsewhere (from the menu), not under the table
-  function renderReport(el, doc, noChart) {
+  // noSummary: the summary (joints, total, average) is shown above the buttons instead
+  function renderReport(el, doc, noChart, noSummary) {
     const r = C.buildRecords(doc);
     el.innerHTML =
-      '<div class="chrono-report"><div class="chrono-mode-tag">' + esc(C.MODES[r.mode].label) + "</div>" +
-      summaryHtml(r) +
+      '<div class="chrono-report">' +
+      (noSummary ? "" : summaryHtml(r)) +
       (r.records.length ? tableHtml(r) + (noChart ? "" : chartHtml(r)) : '<p class="small">No weld recorded yet.</p>') +
       "</div>";
   }
@@ -96,7 +98,8 @@
         device: opts.device,
         title: opts.title || "",
         mode: keepFromCurrent && doc ? doc.mode : C.DEFAULT_MODE,
-        firstWeldNumber: keepFromCurrent && doc ? doc.firstWeldNumber : 1,
+        // a new session continues the numbering: its first weld is the next one after the last weld of the previous session
+        firstWeldNumber: keepFromCurrent && doc ? C.buildRecords(doc).firstWeldNumber + C.buildRecords(doc).joints : 1,
       });
     }
 
@@ -120,11 +123,12 @@
       const mode = C.modeOf(doc);
       const next = s.r.firstWeldNumber + s.r.joints;
       // on the phone the mode is chosen from a menu in the page header (opts.modeMenu), not here
+      // the mode is a pill of two choices on the PC; on the phone it is in the header menu (opts.modeMenu)
       const modes = opts.modeMenu
         ? ""
-        : '<select class="chrono-mode-select" aria-label="Mode"' + (s.started ? " disabled" : "") + ">" +
-          C.MODE_IDS.map((id) => '<option value="' + id + '"' + (id === mode ? " selected" : "") + ">" + esc(C.MODES[id].label) + "</option>").join("") +
-          "</select>";
+        : '<div class="chrono-mode-pill' + (s.started ? " disabled" : "") + '" role="group" aria-label="Mode">' +
+          C.MODE_IDS.map((id) => '<span data-mode="' + id + '" role="button" aria-pressed="' + (id === mode) + '" class="' + (id === mode ? "active" : "") + '">' + esc(C.MODES[id].label) + "</span>").join("") +
+          "</div>";
       const allSteps = C.stepsOf(mode);
       const lastRec = s.r.records.length ? s.r.records[s.r.records.length - 1] : null;
       const openRec = lastRec && lastRec.open ? lastRec : null;
@@ -159,29 +163,37 @@
         '<label class="chrono-field">First weld<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="chrono-first" value="' + doc.firstWeldNumber + '"' + (s.started ? " disabled" : "") + "></label>" +
         "</div>" +
         "</div>" +
-        '<div class="chrono-modes" role="group" aria-label="Mode">' + modes + "</div>" +
+        (opts.modeSlot ? "" : '<div class="chrono-modes" role="group" aria-label="Mode">' + modes + "</div>") +
         '<div class="chrono-status">' +
         (s.running ? "Running · next weld n° " + next : s.stopped ? "Stopped · " + s.r.joints + " welds" : "Not started") +
         "</div>" +
+        summaryHtml(s.r) +
         '<div class="chrono-main">' +
+        // on the PC the first row holds Start (or Next weld) and Stop over the KP, Weld and Start columns; the steps sit over the table columns
+        // Cancel last on the left and New session on the right, above the buttons
+        '<div class="chrono-row">' +
+        '<button type="button" class="chrono-btn secondary" data-type="cancel"' + (doc.events.length ? "" : " disabled") + ">Cancel last</button>" +
+        (s.stopped ? '<button type="button" class="chrono-btn secondary next" data-type="new">New session</button>' : "") +
+        "</div>" +
+        '<div class="chrono-steps" style="--n:' + allSteps.length + '">' +
         (s.started
           ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
           : '<button type="button" class="chrono-btn start" data-type="start">Start</button>') +
-        '<div class="chrono-steps">' + stepButtons + "</div>" +
-        '<div class="chrono-row">' +
         '<button type="button" class="chrono-btn stop" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
-        '<button type="button" class="chrono-btn secondary" data-type="cancel"' + (doc.events.length ? "" : " disabled") + ">Cancel last</button>" +
-        (s.stopped ? '<button type="button" class="chrono-btn secondary next" data-type="new">New session</button>' : "") +
+        stepButtons + '<i class="chrono-spacer"></i>' +
         "</div></div>" +
         '<div class="chrono-report-slot"></div>';
+      // the mode pill goes into the slot given by the page, when there is one
+      if (opts.modeSlot) opts.modeSlot.innerHTML = modes;
       el.innerHTML = '<div class="chrono">' + body + "</div>";
-      renderReport(el.querySelector(".chrono-report-slot"), doc, !!opts.chartInMenu);
+      renderReport(el.querySelector(".chrono-report-slot"), doc, !!opts.chartInMenu, true);
     }
 
-    el.addEventListener("click", async (ev) => {
-      const modeBtn = ev.target.closest("button[data-mode]");
+    const onClick = async (ev) => {
+      const modeBtn = ev.target.closest("[data-mode]");
       if (modeBtn) {
-        if (modeBtn.disabled || doc.events.length) return;
+        // the mode can change only before Start
+        if (doc.events.length) return;
         doc.mode = modeBtn.dataset.mode;
         await persist();
         return render();
@@ -198,11 +210,15 @@
         else doc.events.push({ type, t });
         // one step at a time: the last step of the cycle (pressed or passed) closes the weld, and the next weld starts
         const steps = C.stepsOf(C.modeOf(doc));
-        if (opts.sequential && stepType === steps[steps.length - 1].type) doc.events.push({ type: "weld", t });
+        // on the PC as on the phone: the last step of the cycle closes the weld, and the next weld starts
+        if (stepType === steps[steps.length - 1].type) doc.events.push({ type: "weld", t });
       }
       await persist();
       render();
-    });
+    };
+    el.addEventListener("click", onClick);
+    // the mode pill can sit in another place of the page (the title row): it works the same way
+    if (opts.modeSlot) opts.modeSlot.addEventListener("click", onClick);
 
     el.addEventListener("change", async (ev) => {
       if (ev.target.classList.contains("chrono-mode-select")) {
