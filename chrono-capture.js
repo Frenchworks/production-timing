@@ -43,7 +43,7 @@
   function chartHtml(r) {
     const steps = C.stepsOf(r.mode);
     // the bottom margin holds the step names, written on a slope under each bar
-    const W = 640, H = 300, M = { l: 48, r: 12, t: 16, b: 110 };
+    const W = 640, H = 236, M = { l: 48, r: 12, t: 16, b: 60 };
     const plotW = W - M.l - M.r, plotH = H - M.t - M.b;
     const totals = steps.map((s) => r.columns[s.type].total || 0);
     const avgs = steps.map((s) => r.columns[s.type].avg || 0);
@@ -69,9 +69,8 @@
     });
     out += '<rect x="' + M.l + '" y="2" width="10" height="10" fill="#6A99AD"/><text x="' + (M.l + 14) + '" y="11">Total</text>';
     out += '<rect x="' + (M.l + 70) + '" y="2" width="10" height="10" fill="#C8DC1B"/><text x="' + (M.l + 84) + '" y="11">Average</text>';
-    // the numbers under the bars, with the name of each step
-    const legend = steps.map((s, i) => "<li><b>" + (i + 1) + "</b> " + esc(s.label) + "</li>").join("");
-    return out + "</svg>" + '<ol class="chrono-legend">' + legend + "</ol>";
+    // a small title above the chart
+    return '<div class="chrono-chart-title">Total and average per step</div>' + out + "</svg>";
   }
 
   function summaryHtml(r) {

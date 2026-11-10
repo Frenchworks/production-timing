@@ -30,7 +30,7 @@
         { type: "fitUpReady", col: "1", label: "Fit up ready", button: "Fit up ready" },
         { type: "cabinIn", col: "2", label: "Cabin in position", button: "Cabin in position" },
         { type: "clampReleased", col: "3", label: "Clamp released", button: "Clamp released" },
-        { type: "cabin1Ready", col: "4", label: "Cabin 1 ready", button: "Cabin 1 ready" },
+        { type: "cabin1Ready", col: "4", label: "Cabin 1 finish", button: "Cabin 1 finish" },
         { type: "clampIn", col: "5", label: "Clamp in position", button: "Clamp in position" },
         // further steps of the onshore sequence: to be added here, in order
       ],
