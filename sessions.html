@@ -7,10 +7,12 @@
   <link rel="stylesheet" href="chrono.css">
   <link rel="stylesheet" href="chrono-phone.css">
   <style>
+    :root { --boxborder: #4a4a4a; --card: #2c2c2c; --fg: #f0f0f0; }
     body { margin: 0; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); font: 14px system-ui, sans-serif; background: #1e1e1e; color: #eee; }
-    header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
-    h1 { font-size: 1.3em; margin: 0; color: #cfe6f2; }
-    a.back { color: #cfe6f2; text-decoration: none; font-weight: bold; }
+    header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    header h1 { font-size: 1.2em; margin: 0; color: #cfe6f2; }
+    .import-btn { margin-left: auto; display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #98abb3; border-radius: 6px; background: #C8DC1B; color: #2D4455; font-weight: bold; cursor: pointer; }
+    .back { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--card); color: var(--fg); font-weight: bold; text-decoration: none; }
     .list { display: flex; flex-direction: column; gap: 8px; }
     .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px; border: 1px solid #444; border-radius: 6px; }
     .row small { opacity: 0.75; display: block; }
@@ -22,16 +24,10 @@
 </head>
 <body>
   <header>
+    <a class="back" href="./">← Back</a>
     <h1>Sessions</h1>
-    <a class="back" href="index.html">Back</a>
+    <label class="import-btn">Import<input type="file" id="import-input" accept=".json,application/json" hidden></label>
   </header>
-
-  <div class="import">
-    <label class="chrono-btn" style="display:block;text-align:center;padding:12px;cursor:pointer;">
-      Import a session file
-      <input type="file" id="import-input" accept=".json,application/json">
-    </label>
-  </div>
 
   <div class="msg" id="msg" role="status"></div>
   <h2 style="font-size:1em;margin:12px 0 6px;">Last 10 sessions</h2>
@@ -66,7 +62,7 @@
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
       }
       function render() {
-        var items = readHistory();
+        var items = readHistory().slice(0, HISTORY_MAX);
         var cur = currentId();
         if (!items.length) { list.innerHTML = '<p class="empty">No session yet.</p>'; return; }
         list.innerHTML = items.map(function (d) {

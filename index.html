@@ -76,8 +76,6 @@
         <button type="button" id="sessions-btn">Sessions</button>
         <button type="button" id="chart-btn">Chart</button>
         <button type="button" id="chrono-export">Export file</button>
-        <p>Last 10 sessions</p>
-        <div id="recent-list" class="recent-list"></div>
       </div>
     </header>
 
@@ -221,35 +219,6 @@
           markMode();
         });
 
-        // The last 10 sessions in the menu: a tap opens the session (it becomes the current one)
-        var recentList = document.getElementById("recent-list");
-        function renderRecent() {
-          var current = ui.getDoc();
-          var list = readHistory();
-          recentList.innerHTML = "";
-          if (!list.length) {
-            recentList.innerHTML = '<p style="opacity:0.7">No session yet.</p>';
-            return;
-          }
-          list.forEach(function (d) {
-            var joints = ChronoCore.buildRecords(d).joints;
-            var when = new Date(d.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
-            var b = document.createElement("button");
-            b.type = "button";
-            b.dataset.session = d.sessionId;
-            b.textContent = (d.title || "Session") + " · " + when + " · " + joints + " welds" + (d.sessionId === current.sessionId ? " (current)" : "");
-            recentList.appendChild(b);
-          });
-        }
-        recentList.addEventListener("click", function (ev) {
-          var b = ev.target.closest("button[data-session]");
-          if (!b) return;
-          var picked = readHistory().filter(function (d) { return d.sessionId === b.dataset.session; })[0];
-          if (!picked) return;
-          try { localStorage.setItem(KEY, JSON.stringify(picked)); } catch (e) { note.textContent = "This phone cannot open the session."; return; }
-          window.location.reload();
-        });
-        menuBtn.addEventListener("click", renderRecent);
 
         // Sessions page: the list of the last sessions and the import of a file
         document.getElementById("sessions-btn").addEventListener("click", function () { window.location.href = "sessions.html"; });
