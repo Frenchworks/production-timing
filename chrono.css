@@ -137,7 +137,7 @@
 .chrono-session-actions { display: flex; gap: 6px; }
 
 /* phone: one column, large buttons, no sideways scroll on the page */
-@media (max-width: 520px) {
+@media (max-width: 520px), (orientation: landscape) and (max-height: 500px) {
   /* phone: the step columns keep 60px, the table scrolls sideways like the one of the PC */
   .chrono-table tr > :nth-child(n+4):not(.fit):not(.col-comment) { width: 60px; }
   /* phone: Stop goes after the steps, just before the table */
@@ -153,6 +153,7 @@
   .chrono-steps > .chrono-btn { margin: 0; }
   .chrono-steps > .chrono-btn.start, .chrono-steps > .chrono-btn.weld, .chrono-steps > .chrono-btn.stop { grid-column: auto; }
   .chrono-spacer { display: none; }
+  .chrono-steps > .chrono-done-list, .chrono-steps > .chrono-next-row { grid-column: 1 / -1; }
   .chrono-btn { min-height: 46px; font-size: 1em; }
   .chrono-btn.step.next { min-height: 62px; font-size: 1.1em; }
   .chrono-field { width: 100%; font-size: 0.9em; }
@@ -165,6 +166,14 @@
 }
 
 /* on the PC the Start, Stop and step buttons are taller, so they are easy to hit */
-@media (min-width: 521px) {
+@media (min-width: 521px) and (min-height: 501px) {
   .chrono-steps > .chrono-btn { min-height: 46px; font-size: 0.82em; padding: 6px 4px; white-space: normal; line-height: 1.15; }
+}
+
+/* phone in landscape: the buttons sit in three columns, so the screen is not all scrolling */
+@media (orientation: landscape) and (max-height: 500px) {
+  .chrono-steps { grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .chrono-steps > .chrono-btn { margin: 0; }
+  .chrono-spacer { display: none; }
+  .chrono-steps > .chrono-done-list, .chrono-steps > .chrono-next-row { grid-column: 1 / -1; }
 }
