@@ -20,7 +20,7 @@
   function tableHtml(r) {
     const steps = C.stepsOf(r.mode);
     // KP, Weld, Start and Max take the width of their content (class fit); the step columns share the rest equally
-    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit">Start</th>' + steps.map(stepHeader).join("") + '<th class="fit col-air">In the air</th><th class="fit col-clamp">Clamp move</th><th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
+    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit">Start</th>' + steps.map(stepHeader).join("") + '<th class="fit col-air">Cabin 1 up</th><th class="fit col-clamp">Clamp move</th><th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
     const rows = r.records
       .map((rec) => {
         const label = rec.open ? "open" : rec.weldLabel;
@@ -153,6 +153,8 @@
           .map((st) => '<button type="button" class="chrono-btn step" data-type="' + st.type + '"' + (s.running ? "" : " disabled") + ">" + esc(st.button) + "</button>")
           .join("");
       }
+      // on the phone, while the weld is running, Next weld sits to the right of Cancel last
+      const weldInRow = !!opts.sequential && s.started && !s.stopped;
       const body =
         '<div class="chrono-head">' +
         '<label class="chrono-field">Title<input type="text" class="chrono-title" value="' + esc(doc.title) + '"' + (s.started ? " disabled" : "") + "></label>" +
@@ -173,10 +175,11 @@
         '<div class="chrono-row">' +
         // Cancel last appears only once the session has started
         (doc.events.length ? '<button type="button" class="chrono-btn secondary" data-type="cancel">Cancel last</button>' : "") +
+        (weldInRow ? '<button type="button" class="chrono-btn weld' + (s.running && !nextStep ? " next" : "") + (s.running && nextStep ? " secondary" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>" : "") +
         (s.stopped ? '<button type="button" class="chrono-btn secondary next" data-type="new">New session</button>' : "") +
         "</div>" +
         '<div class="chrono-steps" style="--n:' + allSteps.length + '">' +
-        (s.started
+        (weldInRow ? "" : s.started
           ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + (opts.sequential && s.running && nextStep ? " secondary" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
           : '<button type="button" class="chrono-btn start" data-type="start">Start</button>') +
         '<button type="button" class="chrono-btn stop" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
