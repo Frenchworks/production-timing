@@ -126,6 +126,9 @@
 .chrono-table td.chrono-max { background: #f6c6c6; color: #000; font-weight: bold; }
 .chrono-table tr.chrono-sum td { font-weight: bold; background: var(--card-light, #eef2f5); }
 .chrono-chart { width: 100%; height: auto; max-width: 100%; display: block; }
+/* the WTR check: the Compare button sits on the same line as the fields, at their bottom */
+.chrono-wtr-row { align-items: flex-end; }
+.chrono-wtr-row .chrono-field select { height: 32px; }
 /* the text is drawn in the units of the chart: a smaller size keeps it readable when the chart is full width */
 .chrono-chart text { fill: var(--fg, #222); font-size: 8px; font-family: Arial, sans-serif; }
 .chrono-legend { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; font-size: 0.8em; }
