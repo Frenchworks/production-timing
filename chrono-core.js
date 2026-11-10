@@ -148,6 +148,8 @@
         prev = r.steps[k];
       }
       const values = done.map((k) => r.durations[k]);
+      // comment of the line: kept in the document, keyed by the start time of the weld (it does not move with the numbering)
+      r.comment = (doc.comments && typeof doc.comments[String(r.start)] === "string") ? doc.comments[String(r.start)] : "";
       r.maxSec = values.length ? Math.max.apply(null, values) : null;
       // the longest step(s) of the weld are highlighted
       r.highlight = done.filter((k) => r.durations[k] >= r.maxSec);
@@ -171,6 +173,17 @@
       }
     }
     if (records.length) records[records.length - 1].airSec = null;
+
+    // clamp movement: from "Clamp released" of a weld to "Clamp in position" of the next weld (clamp moved to the next joint)
+    for (let i = 0; i < records.length; i++) {
+      const rec = records[i];
+      const next = records[i + 1];
+      if (next && typeof rec.steps.clampReleased === "number" && typeof next.steps.clampIn === "number") {
+        rec.clampSec = (next.start - rec.start) / 1000 + next.steps.clampIn - rec.steps.clampReleased;
+      } else {
+        rec.clampSec = null;
+      }
+    }
 
     const joints = closed.length;
     const totalSec = sessionStart !== null && sessionStop !== null ? (sessionStop - sessionStart) / 1000 : null;
@@ -226,6 +239,7 @@
       title: opts.title || "",
       firstWeldNumber: Number.isInteger(opts.firstWeldNumber) ? opts.firstWeldNumber : 1,
       kp: Number.isInteger(opts.kp) ? opts.kp : null,
+      comments: opts.comments || {},
       createdAt: opts.createdAt || new Date().toISOString(),
       exportedAt: new Date().toISOString(),
       events: opts.events || [],
