@@ -47,7 +47,8 @@
       .mode-menu p { margin: 0; font-size: 0.8em; opacity: 0.8; }
       .mode-menu button { min-height: 48px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--bg); color: var(--fg); font-size: 1em; font-weight: bold; cursor: pointer; text-align: left; padding: 0 14px; }
       .mode-menu button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--darken); }
-        body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: env(safe-area-inset-top, 0px); background: #456a83; z-index: 10; }
+              /* portrait: the title and the menu sit lower, under the status bar */
+      @media (orientation: portrait) { body { padding-top: max(36px, calc(env(safe-area-inset-top, 0px) + 24px)); } }
     </style>
   </head>
   <body>
