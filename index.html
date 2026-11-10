@@ -73,6 +73,7 @@
           <button type="button" data-mode="onshore">Onshore</button>
           <button type="button" data-mode="offshore">Offshore</button>
         </div>
+        <button type="button" id="sessions-btn">Sessions</button>
         <button type="button" id="chart-btn">Chart</button>
         <button type="button" id="chrono-export">Export file</button>
         <p>Last 10 sessions</p>
@@ -249,6 +250,9 @@
           window.location.reload();
         });
         menuBtn.addEventListener("click", renderRecent);
+
+        // Sessions page: the list of the last sessions and the import of a file
+        document.getElementById("sessions-btn").addEventListener("click", function () { window.location.href = "sessions.html"; });
 
         // Chart from the menu: opens the chart page, which reads the session of this phone
         // without a weld there is no chart: a message window says so, instead of opening an empty page

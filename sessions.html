@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sessions</title>
+  <link rel="stylesheet" href="chrono.css">
+  <link rel="stylesheet" href="chrono-phone.css">
+  <style>
+    body { margin: 0; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); font: 14px system-ui, sans-serif; background: #1e1e1e; color: #eee; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
+    h1 { font-size: 1.3em; margin: 0; color: #cfe6f2; }
+    a.back { color: #cfe6f2; text-decoration: none; font-weight: bold; }
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px; border: 1px solid #444; border-radius: 6px; }
+    .row small { opacity: 0.75; display: block; }
+    .import { margin: 12px 0; }
+    .empty { opacity: 0.7; }
+    .msg { min-height: 1.2em; margin-top: 10px; }
+    input[type=file] { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sessions</h1>
+    <a class="back" href="index.html">Back</a>
+  </header>
+
+  <div class="import">
+    <label class="chrono-btn" style="display:block;text-align:center;padding:12px;cursor:pointer;">
+      Import a session file
+      <input type="file" id="import-input" accept=".json,application/json">
+    </label>
+  </div>
+
+  <div class="msg" id="msg" role="status"></div>
+  <h2 style="font-size:1em;margin:12px 0 6px;">Last 10 sessions</h2>
+  <div class="list" id="list"></div>
+
+  <script src="chrono-core.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      var KEY = "chrono-mobile-current";
+      var HISTORY_KEY = "chrono-mobile-history";
+      var HISTORY_MAX = 10;
+      var C = window.ChronoCore;
+      var msg = document.getElementById("msg");
+      var list = document.getElementById("list");
+
+      function readHistory() {
+        try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch (e) { return []; }
+      }
+      function remember(doc) {
+        var rest = readHistory().filter(function (d) { return d.sessionId !== doc.sessionId; });
+        rest.unshift(doc);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(rest.slice(0, HISTORY_MAX)));
+      }
+      function currentId() {
+        try { var c = JSON.parse(localStorage.getItem(KEY) || "null"); return c ? c.sessionId : null; } catch (e) { return null; }
+      }
+      function label(d) {
+        return (d.title || "Session") + " · " + new Date(d.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+      }
+      function escapeHtml(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
+      }
+      function render() {
+        var items = readHistory();
+        var cur = currentId();
+        if (!items.length) { list.innerHTML = '<p class="empty">No session yet.</p>'; return; }
+        list.innerHTML = items.map(function (d) {
+          var joints = C.buildRecords(d).joints;
+          return '<div class="row"><div><b>' + escapeHtml(d.title || "Session") + "</b>" + (d.sessionId === cur ? " (current)" : "") +
+            "<small>" + escapeHtml(new Date(d.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })) + " · " + joints + " welds · " + escapeHtml(d.device || "") + "</small></div>" +
+            '<button type="button" class="chrono-btn secondary" data-open="' + escapeHtml(d.sessionId) + '">Open</button></div>';
+        }).join("");
+      }
+
+      list.addEventListener("click", function (ev) {
+        var b = ev.target.closest("button[data-open]");
+        if (!b) return;
+        var picked = readHistory().filter(function (d) { return d.sessionId === b.dataset.open; })[0];
+        if (!picked) return;
+        localStorage.setItem(KEY, JSON.stringify(picked));
+        window.location.href = "index.html";
+      });
+
+      document.getElementById("import-input").addEventListener("change", function (ev) {
+        var file = ev.target.files && ev.target.files[0];
+        ev.target.value = "";
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var doc;
+          try { doc = JSON.parse(reader.result); } catch (e) { msg.textContent = "This file is not a valid JSON file."; return; }
+          var errors = C.validate(doc);
+          if (errors.length) { msg.textContent = errors.join(" "); return; }
+          remember(doc);
+          localStorage.setItem(KEY, JSON.stringify(doc));
+          msg.textContent = "Imported: " + (doc.title || "session") + ".";
+          window.location.href = "index.html";
+        };
+        reader.onerror = function () { msg.textContent = "The file cannot be read."; };
+        reader.readAsText(file, "utf-8");
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
