@@ -1,6 +1,6 @@
 {
   "name": "Production Timing",
-  "short_name": "Timing",
+  "short_name": "Production timing",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
