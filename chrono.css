@@ -180,3 +180,7 @@
   .chrono-spacer { display: none; }
   .chrono-steps > .chrono-done-list, .chrono-steps > .chrono-next-row { grid-column: 1 / -1; }
 }
+
+/* the WTR check table: each column fits its content, the table is only as wide as its columns */
+.chrono-table.chrono-wtr { table-layout: auto; width: auto; min-width: 0; }
+.chrono-table.chrono-wtr th, .chrono-table.chrono-wtr td { width: auto !important; white-space: nowrap; }
