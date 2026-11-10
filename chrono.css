@@ -64,6 +64,8 @@
 /* the close button is a red cross in the top right corner of the window */
 .chrono-modal-close { position: absolute; top: 6px; right: 10px; width: auto; height: auto; min-height: 0; padding: 0 6px; margin: 0; background: none; border: 0; box-shadow: none; color: #BE0000; font-size: 28px; line-height: 1; font-weight: bold; cursor: pointer; }
 .chrono-modal-close:hover { background: none; color: #a00000; }
+/* the title of the window: the title style of the app (no capitals, title colour) */
+.chrono-modal-card h3 { margin: 0; font-size: 1.1em; text-transform: none; color: var(--title, #2D4455); }
 .chrono-modal-card { position: relative; width: 100%; max-width: 400px; max-height: 90vh; overflow: auto; box-sizing: border-box; padding: 20px; border-radius: 6px; background: var(--bg, #fff); color: var(--fg, #222); border: 0; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: left; }
 .chrono-modal-card .chrono-qr { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 10px; }
 .chrono-modal-card canvas { max-width: 100%; height: auto; }
@@ -124,6 +126,8 @@
 
 /* phone: one column, large buttons, no sideways scroll on the page */
 @media (max-width: 520px) {
+  /* phone: Stop goes after the steps, just before the table */
+  .chrono-steps > .chrono-btn.stop { order: 1; }
   /* phone: the title on its own line, then KP and first weld on the next line */
   .chrono-head { flex-wrap: wrap; }
   /* phone: space between the stacked buttons */
