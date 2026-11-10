@@ -122,6 +122,8 @@
 @media (max-width: 520px) {
   /* phone: the title on its own line, then KP and first weld on the next line */
   .chrono-head { flex-wrap: wrap; }
+  /* phone: space between the stacked buttons */
+  .chrono-steps { gap: 10px; }
   .chrono-head > .chrono-field { width: 100%; flex: 1 1 100%; }
   .chrono-pair { flex: 1 1 100%; }
   .chrono-steps { grid-auto-flow: row; grid-template-columns: 1fr; }
