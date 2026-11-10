@@ -160,6 +160,18 @@
       columns[type] = { total: values.length ? total : null, count: values.length, avg: values.length ? total / values.length : null };
     }
 
+    // time in the air: from "Cabin 1 finish" of a weld (cabin lifted) to "Cabin in position" of the next weld (cabin down again)
+    for (let i = 0; i + 1 < records.length; i++) {
+      const rec = records[i];
+      const next = records[i + 1];
+      if (typeof rec.steps.cabin1Ready === "number" && typeof next.steps.cabinIn === "number") {
+        rec.airSec = (next.start - rec.start) / 1000 + next.steps.cabinIn - rec.steps.cabin1Ready;
+      } else {
+        rec.airSec = null;
+      }
+    }
+    if (records.length) records[records.length - 1].airSec = null;
+
     const joints = closed.length;
     const totalSec = sessionStart !== null && sessionStop !== null ? (sessionStop - sessionStart) / 1000 : null;
     return {

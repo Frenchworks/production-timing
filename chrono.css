@@ -12,7 +12,7 @@
 .chrono-status { font-weight: bold; font-size: 0.9em; color: var(--title, #2D4455); }
 .chrono-main { display: flex; flex-direction: column; gap: 10px; }
 /* on the PC the step buttons sit in the same columns as the table below: KP, Weld, Start (fixed), one per step, Max (fixed); on the phone they stack */
-.chrono-steps { display: grid; grid-template-columns: 56px 84px 80px repeat(var(--n, 5), minmax(0, 1fr)) 60px; gap: 0; }
+.chrono-steps { display: grid; grid-template-columns: 56px 84px 80px repeat(var(--n, 5), minmax(0, 1fr)) 80px 60px; gap: 0; }
 /* width auto: the button fills its column minus the margins, so the gap shows between the buttons */
 .chrono-steps > .chrono-btn { margin: 0 4px; width: auto; }
 /* Start (or Next weld) spans the KP and Weld columns, Stop sits in the Start column */
@@ -109,6 +109,7 @@
 .chrono-table th:first-child, .chrono-table td:first-child { width: 56px; }
 .chrono-table th:nth-child(2), .chrono-table td:nth-child(2) { width: 84px; }
 .chrono-table th:nth-child(3), .chrono-table td:nth-child(3) { width: 80px; }
+.chrono-table th:nth-last-child(2), .chrono-table td:nth-last-child(2) { width: 80px; }
 .chrono-table th:last-child, .chrono-table td:last-child { width: 60px; }
 .chrono-table th, .chrono-table td { border: 1px solid var(--boxborder, #d6d6d6); padding: 4px 6px; text-align: center; white-space: nowrap; }
 .chrono-table th { background: #456a83; color: #fff; font-weight: bold; }

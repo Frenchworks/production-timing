@@ -20,7 +20,7 @@
   function tableHtml(r) {
     const steps = C.stepsOf(r.mode);
     // KP, Weld, Start and Max take the width of their content (class fit); the step columns share the rest equally
-    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit">Start</th>' + steps.map(stepHeader).join("") + '<th class="fit">Max</th></tr>';
+    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit">Start</th>' + steps.map(stepHeader).join("") + '<th class="fit">In the air</th><th class="fit">Max</th></tr>';
     const rows = r.records
       .map((rec) => {
         const label = rec.open ? "open" : rec.weldLabel;
@@ -31,11 +31,11 @@
             return "<td" + hl + ">" + (typeof v === "number" ? C.fmt(v) : "") + "</td>";
           })
           .join("");
-        return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + '</td><td class="fit">' + clock(rec.start) + "</td>" + cells + '<td class="fit">' + C.fmt(rec.maxSec) + "</td></tr>";
+        return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + '</td><td class="fit">' + clock(rec.start) + "</td>" + cells + '<td class="fit">' + C.fmt(rec.airSec) + '</td><td class="fit">' + C.fmt(rec.maxSec) + "</td></tr>";
       })
       .join("");
-    const total = '<tr class="chrono-sum"><td colspan="2">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + "<td></td></tr>";
-    const avg = '<tr class="chrono-sum"><td colspan="2">Average</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].avg) + "</td>").join("") + "<td></td></tr>";
+    const total = '<tr class="chrono-sum"><td colspan="2">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + "<td></td><td></td></tr>";
+    const avg = '<tr class="chrono-sum"><td colspan="2">Average</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].avg) + "</td>").join("") + "<td></td><td></td></tr>";
     return '<div class="chrono-table-wrap"><table class="chrono-table"><thead>' + head + "</thead><tbody>" + rows + total + avg + "</tbody></table></div>";
   }
 
@@ -180,7 +180,7 @@
           ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + (opts.sequential && s.running && nextStep ? " secondary" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
           : '<button type="button" class="chrono-btn start" data-type="start">Start</button>') +
         '<button type="button" class="chrono-btn stop" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
-        stepButtons + '<i class="chrono-spacer"></i>' +
+        stepButtons + '<i class="chrono-spacer"></i><i class="chrono-spacer"></i>' +
         "</div></div>" +
         '<div class="chrono-report-slot"></div>';
       // the mode pill goes into the slot given by the page, when there is one
