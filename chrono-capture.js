@@ -235,7 +235,7 @@
       if (type === "cancel") doc.events = C.undo(doc.events);
       else if (type === "new") doc = newDoc(true);
       else {
-        const t = new Date().toISOString();
+        const t = C.nowWall();
         const stepType = type === "skip" ? b.dataset.step : type;
         if (type === "skip") doc.events.push({ type: "skip", step: stepType, t });
         else doc.events.push({ type, t });

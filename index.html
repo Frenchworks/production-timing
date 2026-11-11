@@ -136,8 +136,8 @@
         var ui = ChronoUI.mountCapture(document.getElementById("chrono-capture"), { device: "mobile", title: "", storage: storage, sequential: true, modeMenu: true, chartInMenu: true });
 
         function fileName(doc) {
-          var d = new Date(doc.createdAt);
-          var stamp = d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0") + "_" + String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0");
+          // the date and time written in the session (the phone clock), in the name
+          var wall = ChronoCore.toWall(ChronoCore.parseWall(doc.createdAt)); var stamp = wall.slice(0, 10) + "_" + wall.slice(11, 13) + wall.slice(14, 16);
           // the title of the session goes in the file name, without characters that a file name cannot hold
           var t = String(doc.title || "").trim().slice(0, 60).replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "");
           return "chrono_" + (t ? t + "_" : "") + stamp + "_" + doc.sessionId.slice(0, 8) + ".json";
@@ -148,7 +148,7 @@
           modeMenu.hidden = true;
           menuBtn.setAttribute("aria-expanded", "false");
           var doc = ui.getDoc();
-          var out = Object.assign({}, doc, { exportedAt: new Date().toISOString() });
+          var out = Object.assign({}, doc, { exportedAt: ChronoCore.nowWall() });
           var text = JSON.stringify(out, null, 2);
           var name = fileName(out);
           var file = new File([text], name, { type: "application/json" });

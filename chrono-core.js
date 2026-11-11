@@ -79,7 +79,7 @@
       const n = i + 1;
       if (!ev || allowed.indexOf(ev.type) < 0) errors.push("Événement " + n + " : type inconnu pour ce mode.");
       if (ev && ev.type === "skip" && stepTypesOf(modeOf(doc)).indexOf(ev.step) < 0) errors.push("Événement " + n + " : étape à passer inconnue.");
-      const t = ev && typeof ev.t === "string" ? Date.parse(ev.t) : NaN;
+      const t = ev && typeof ev.t === "string" ? parseWall(ev.t) : NaN;
       if (isNaN(t)) {
         errors.push("Événement " + n + " : heure invalide.");
       } else {
@@ -122,7 +122,7 @@
       const relTo = (rec, t) => (t - rec.start) / 1000;
       const openAt = (t) => { cur = { start: t, steps: {}, skipped: {} }; };
       for (const ev of doc.events || []) {
-        const t = Date.parse(ev.t);
+        const t = parseWall(ev.t);
         // the session Start validates the Fit up ready N of the first weld
         if (ev.type === "start") { sessionStart = t; openAt(t); cur.steps.fitUpReady = 0; cabinRec = null; continue; }
         if (ev.type === "stop") { if (cur) closeRecord(t); sessionStop = t; continue; }
@@ -153,7 +153,7 @@
       }
     }
     for (const ev of mode === "onshore" ? [] : doc.events || []) {
-      const t = Date.parse(ev.t);
+      const t = parseWall(ev.t);
       if (ev.type === "start") {
         sessionStart = t;
         cur = { start: t, steps: {}, skipped: {} };
@@ -279,6 +279,30 @@
     return s;
   }
 
+  // Times are kept as wall-clock text, without zone, as the phone shows them: "2026-11-10T08:20:50.565".
+  // In the code a time is the wall clock as milliseconds (read as UTC), so the same text gives the same time on any PC.
+  const PARIS = "Europe/Paris";
+  // a real instant (ms) -> the Paris wall clock as ms
+  function parisWall(instant) {
+    const p = {};
+    new Intl.DateTimeFormat("en-GB", { timeZone: PARIS, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })
+      .formatToParts(new Date(instant)).forEach((x) => { p[x.type] = x.value; });
+    return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second, ((instant % 1000) + 1000) % 1000);
+  }
+  // wall clock ms -> text "YYYY-MM-DDTHH:MM:SS" (no milliseconds in the files)
+  function toWall(ms) {
+    const d = new Date(ms); const q = (n, k) => String(n).padStart(k || 2, "0");
+    return d.getUTCFullYear() + "-" + q(d.getUTCMonth() + 1) + "-" + q(d.getUTCDate()) + "T" + q(d.getUTCHours()) + ":" + q(d.getUTCMinutes()) + ":" + q(d.getUTCSeconds());
+  }
+  // now, on the Paris wall clock, as text
+  function nowWall() { return toWall(parisWall(Date.now())); }
+  // text -> wall clock ms. Text with a zone (old files, "Z") is converted to the Paris wall clock; text without zone is read as is.
+  function parseWall(s) {
+    if (typeof s !== "string") return NaN;
+    if (/(Z|[+-]d{2}:?d{2})$/i.test(s)) return parisWall(Date.parse(s));
+    return Date.parse(s + "Z");
+  }
+
   function makeDocument(opts) {
     return {
       format: FORMAT,
@@ -290,8 +314,8 @@
       firstWeldNumber: Number.isInteger(opts.firstWeldNumber) ? opts.firstWeldNumber : 1,
       kp: Number.isInteger(opts.kp) ? opts.kp : null,
       comments: opts.comments || {},
-      createdAt: opts.createdAt || new Date().toISOString(),
-      exportedAt: new Date().toISOString(),
+      createdAt: opts.createdAt || nowWall(),
+      exportedAt: nowWall(),
       events: opts.events || [],
     };
   }
@@ -382,5 +406,5 @@
     };
   }
 
-  return { FORMAT, VERSION, allowedSteps, MODES, MODE_IDS, DEFAULT_MODE, modeOf, stepsOf, stepTypesOf, validate, buildRecords, fmt, fmtWeld, fmtKp, undo, newId, makeDocument, weldNumberOf, matchWtr, idleGaps };
+  return { FORMAT, VERSION, allowedSteps, parisWall, toWall, nowWall, parseWall, MODES, MODE_IDS, DEFAULT_MODE, modeOf, stepsOf, stepTypesOf, validate, buildRecords, fmt, fmtWeld, fmtKp, undo, newId, makeDocument, weldNumberOf, matchWtr, idleGaps };
 });
