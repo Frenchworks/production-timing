@@ -27,11 +27,13 @@
     onshore: {
       label: "Onshore",
       steps: [
-        { type: "fitUpReady", col: "1", label: "Fit up ready", button: "Fit up ready" },
+        // chrono workbook order, without backweld. Two chains: clamp (released, next clamp in, next fit up) and cabin (in position, cabin up N, cabin up N+1)
+        { type: "fitUpReady", col: "1", label: "Start", button: "Start weld" },
         { type: "cabinIn", col: "2", label: "Cabin in position", button: "Cabin in position" },
         { type: "clampReleased", col: "3", label: "Clamp released", button: "Clamp released" },
-        { type: "cabin1Ready", col: "4", label: "Cabin 1 finish", button: "Cabin 1 finish" },
-        { type: "clampIn", col: "5", label: "Clamp in position", button: "Clamp in position" },
+        { type: "clampIn", col: "4", label: "Clamp in position N+1", button: "Clamp in position" },
+        { type: "cabinUpN", col: "5", label: "Cabin up N", button: "Cabin up N" },
+        { type: "cabin1Ready", col: "6", label: "Cabin ready N+1", button: "Cabin ready N+1" },
         // further steps of the onshore sequence: to be added here, in order
       ],
     },
@@ -114,7 +116,33 @@
       cur = null;
     }
 
-    for (const ev of doc.events || []) {
+    // onshore: a weld starts at its Fit up ready; the cabin cycle belongs to the weld where its Cabin in position was pressed
+    if (mode === "onshore") {
+      let cabinRec = null;
+      const relTo = (rec, t) => (t - rec.start) / 1000;
+      const openAt = (t) => { cur = { start: t, steps: {}, skipped: {} }; };
+      for (const ev of doc.events || []) {
+        const t = Date.parse(ev.t);
+        if (ev.type === "start") { sessionStart = t; openAt(t); cabinRec = null; continue; }
+        if (ev.type === "stop") { if (cur) closeRecord(t); sessionStop = t; continue; }
+        if (ev.type === "weld") { if (cur) { closeRecord(t); openAt(t); } continue; }
+        if (ev.type === "skip") { if (cur && stepTypes.indexOf(ev.step) >= 0) cur.skipped[ev.step] = true; continue; }
+        if (!cur) continue;
+        if (ev.type === "fitUpReady") {
+          if (typeof cur.steps.fitUpReady === "number") { closeRecord(t); openAt(t); cur.steps.fitUpReady = 0; }
+          else cur.steps.fitUpReady = relTo(cur, t);
+        } else if (ev.type === "cabinIn") {
+          cabinRec = cur;
+          cur.steps.cabinIn = relTo(cur, t);
+        } else if (ev.type === "cabinUpN" || ev.type === "cabin1Ready") {
+          const target = cabinRec || cur;
+          target.steps[ev.type] = relTo(target, t);
+        } else if (stepTypes.indexOf(ev.type) >= 0) {
+          cur.steps[ev.type] = relTo(cur, t);
+        }
+      }
+    }
+    for (const ev of mode === "onshore" ? [] : doc.events || []) {
       const t = Date.parse(ev.t);
       if (ev.type === "start") {
         sessionStart = t;
@@ -163,7 +191,10 @@
     }
 
     // time in the air: from "Cabin 1 finish" of a weld (cabin lifted) to "Cabin in position" of the next weld (cabin down again)
-    for (let i = 0; i + 1 < records.length; i++) {
+    if (mode === "onshore") {
+      for (const rec of records) rec.airSec = typeof rec.steps.cabin1Ready === "number" && typeof rec.steps.cabinUpN === "number" ? rec.steps.cabin1Ready - rec.steps.cabinUpN : null;
+    }
+    for (let i = 0; mode !== "onshore" && i + 1 < records.length; i++) {
       const rec = records[i];
       const next = records[i + 1];
       if (typeof rec.steps.cabin1Ready === "number" && typeof next.steps.cabinIn === "number") {
@@ -178,6 +209,10 @@
     for (let i = 0; i < records.length; i++) {
       const rec = records[i];
       const next = records[i + 1];
+      if (mode === "onshore") {
+        rec.clampSec = typeof rec.steps.clampReleased === "number" && typeof rec.steps.clampIn === "number" ? rec.steps.clampIn - rec.steps.clampReleased : null;
+        continue;
+      }
       if (next && typeof rec.steps.clampReleased === "number" && typeof next.steps.clampIn === "number") {
         rec.clampSec = (next.start - rec.start) / 1000 + next.steps.clampIn - rec.steps.clampReleased;
       } else {
@@ -246,5 +281,87 @@
     };
   }
 
-  return { FORMAT, VERSION, MODES, MODE_IDS, DEFAULT_MODE, modeOf, stepsOf, stepTypesOf, validate, buildRecords, fmt, fmtWeld, fmtKp, undo, newId, makeDocument };
+  // Weld number from a WTR weld alias: "FW0021", "21" and " 21 " all give 21 (null when there are no digits)
+  function weldNumberOf(alias) {
+    const digits = String(alias === null || alias === undefined ? "" : alias).replace(/\D/g, "");
+    return digits ? parseInt(digits, 10) : null;
+  }
+
+  // Crosses the closed welds of a session with WTR cycles: { weld, start (ms), durationMs }.
+  // A cycle belongs to a weld when it starts inside the weld (from a tolerance before its start to its end).
+  // Each cycle is used once, weld by weld; a cycle with the same weld number is preferred.
+  function matchWtr(doc, cycles, toleranceSec) {
+    const tol = (toleranceSec === undefined ? 0 : toleranceSec) * 1000;
+    const recs = buildRecords(doc).records.filter((r) => !r.open);
+    const list = (cycles || []).slice().sort((a, b) => a.start - b.start);
+    const used = new Set();
+    return recs.map((r) => {
+      const from = r.start - tol;
+      const to = r.end;
+      const inside = list.filter((c, i) => !used.has(i) && c.start >= from && c.start < to);
+      // every cycle of the time slot belongs to this weld: their durations add up to the arc (welding) time
+      inside.forEach((c) => used.add(list.indexOf(c)));
+      const same = inside.find((c) => weldNumberOf(c.weld) === r.weldNumber);
+      const cycle = same || inside[0] || null;
+      let status = "none";
+      if (cycle) status = weldNumberOf(cycle.weld) === r.weldNumber ? "same" : "other";
+      const timingSec = (r.end - r.start) / 1000;
+      const arcSec = inside.length ? inside.reduce((sum, c) => sum + (c.durationMs || 0), 0) / 1000 : null;
+      return {
+        weldLabel: r.weldLabel,
+        start: r.start,
+        timingSec,
+        wtrWeld: cycle ? cycle.weld : "",
+        wtrStart: cycle ? cycle.start : null,
+        wtrSec: cycle ? cycle.durationMs / 1000 : null,
+        cycles: inside.length,
+        arcSec,
+        nonArcSec: arcSec === null ? null : timingSec - arcSec,
+        status,
+      };
+    });
+  }
+
+  // Idle times: the stretches of the window (from, to) without any welding cycle, longer than thresholdSec.
+  // cycles: { start (ms), durationMs }. Returns [{ from, to, durationSec }] (ms for from and to).
+  // Every stretch without a cycle is returned (no threshold when thresholdSec is 0), with the weld before and after it.
+  function idleGaps(cycles, from, to, thresholdSec) {
+    const min = (thresholdSec === undefined ? 0 : thresholdSec) * 1000;
+    const list = (cycles || [])
+      .map((c) => ({ s: c.start, e: c.start + (c.durationMs || 0), weld: c.weld }))
+      .filter((c) => c.e >= from && c.s <= to)
+      .sort((a, b) => a.s - b.s);
+    const gaps = [];
+    let cursor = from;
+    let before = null;
+    for (const c of list) {
+      if (c.s - cursor > min) gaps.push({ from: cursor, to: c.s, durationSec: (c.s - cursor) / 1000, before, after: c.weld });
+      if (c.e > cursor) { cursor = c.e; before = c.weld; }
+    }
+    if (to - cursor > min) gaps.push({ from: cursor, to, durationSec: (to - cursor) / 1000, before, after: null });
+    return gaps;
+  }
+
+  // onshore: which steps may be pressed now. The clamp chain and the cabin chain are independent.
+  function allowedSteps(doc) {
+    if (modeOf(doc) !== "onshore") return null;
+    const recs = buildRecords(doc).records;
+    const open = recs.length && recs[recs.length - 1].open ? recs[recs.length - 1] : null;
+    let cabin = null;
+    for (let i = recs.length - 1; i >= 0; i--) {
+      const st = recs[i].steps;
+      if (typeof st.cabinIn === "number" && typeof st.cabin1Ready !== "number") { cabin = st; break; }
+    }
+    const has = (o, k) => !!o && typeof o.steps[k] === "number";
+    return {
+      fitUpReady: !open || !has(open, "fitUpReady") || has(open, "clampIn"),
+      cabinIn: !cabin,
+      cabinUpN: !!cabin && typeof cabin.cabinUpN !== "number",
+      cabin1Ready: !!cabin && typeof cabin.cabinUpN === "number",
+      clampReleased: !!open,
+      clampIn: has(open, "clampReleased") && !has(open, "clampIn"),
+    };
+  }
+
+  return { FORMAT, VERSION, allowedSteps, MODES, MODE_IDS, DEFAULT_MODE, modeOf, stepsOf, stepTypesOf, validate, buildRecords, fmt, fmtWeld, fmtKp, undo, newId, makeDocument, weldNumberOf, matchWtr, idleGaps };
 });

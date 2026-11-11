@@ -16,7 +16,7 @@
   let cumulativeSteps = false;
 
   function stepHeader(s) {
-    return '<th title="' + esc(s.label) + '">' + esc(s.col) + "<br><small>" + esc(s.label) + (cumulativeSteps ? " (cumulative)" : "") + "</small></th>";
+    return '<th title="' + esc(s.label) + '">' + esc(s.col) + "<br><small>" + esc(s.label) + (cumulativeSteps ? " (duration / cumulative)" : "") + "</small></th>";
   }
 
   // Table of the records: one row per weld, the largest step of each row is highlighted
@@ -29,9 +29,11 @@
         const label = rec.open ? "open" : rec.weldLabel;
         const cells = steps
           .map((s) => {
-            const v = cumulativeSteps ? rec.steps[s.type] : rec.durations[s.type];
+            // the duration of the step is the main figure (the longest one is highlighted); the cumulative time from the start of the weld is under it
+            const d = rec.durations[s.type];
+            const cum = rec.steps[s.type];
             const hl = rec.highlight.indexOf(s.type) >= 0 ? ' class="chrono-max"' : "";
-            return "<td" + hl + ">" + (typeof v === "number" ? C.fmt(v) : "") + "</td>";
+            return "<td" + hl + ">" + (typeof d === "number" ? C.fmt(d) : "") + (cumulativeSteps && typeof cum === "number" ? "<br><small>" + C.fmt(cum) + "</small>" : "") + "</td>";
           })
           .join("");
         return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + '</td><td class="fit">' + clock(rec.start) + "</td>" + cells + '<td class="fit col-air">' + C.fmt(rec.airSec) + '</td><td class="fit col-clamp">' + C.fmt(rec.clampSec) + '</td><td class="fit col-max">' + C.fmt(rec.maxSec) + '</td><td class="col-comment"><input type="text" class="chrono-comment" data-start="' + rec.start + '" value="' + esc(rec.comment) + '" placeholder="Comment"></td></tr>';
@@ -132,6 +134,7 @@
           C.MODE_IDS.map((id) => '<span data-mode="' + id + '" role="button" aria-pressed="' + (id === mode) + '" class="' + (id === mode ? "active" : "") + '">' + esc(C.MODES[id].label) + "</span>").join("") +
           "</div>";
       const allSteps = C.stepsOf(mode);
+      const allowed = C.allowedSteps(doc);
       const lastRec = s.r.records.length ? s.r.records[s.r.records.length - 1] : null;
       const openRec = lastRec && lastRec.open ? lastRec : null;
       const pressed = openRec ? openRec.steps : {};
@@ -139,7 +142,8 @@
       const isLeft = (st) => typeof pressed[st.type] !== "number" && !passed[st.type];
       const nextStep = allSteps.find(isLeft);
       let stepButtons;
-      if (opts.sequential && s.running) {
+      // every step is always there, in any order: the log records each action, there is no fixed order to follow
+      if (false) {
         // one step at a time: the steps done or passed of this weld, then the next one with a small "Pass" button
         const chips = allSteps
           .filter((st) => typeof pressed[st.type] === "number" || passed[st.type])
@@ -153,11 +157,12 @@
       } else {
         // on the PC every step is shown; any order, all optional
         stepButtons = allSteps
-          .map((st) => '<button type="button" class="chrono-btn step" data-type="' + st.type + '"' + (s.running ? "" : " disabled") + ">" + esc(st.button) + "</button>")
+          .map((st) => '<button type="button" class="chrono-btn step" data-type="' + st.type + '"' + (s.running && (!allowed || allowed[st.type]) ? "" : " disabled") + ">" + esc(st.button) + "</button>")
           .join("");
       }
       // on the phone, while the weld is running, Next weld sits to the right of Cancel last
-      const weldInRow = !!opts.sequential && s.started && !s.stopped;
+      const onshoreMode = C.modeOf(doc) === "onshore";
+      const weldInRow = !onshoreMode && !!opts.sequential && s.started && !s.stopped;
       const body =
         '<div class="chrono-head">' +
         '<label class="chrono-field">Title<input type="text" class="chrono-title" value="' + esc(doc.title) + '"' + (s.started ? " disabled" : "") + "></label>" +
@@ -182,7 +187,7 @@
         (s.stopped ? '<button type="button" class="chrono-btn secondary next" data-type="new">New session</button>' : "") +
         "</div>" +
         '<div class="chrono-steps" style="--n:' + allSteps.length + '">' +
-        (weldInRow ? "" : s.started
+        (weldInRow ? "" : s.started && onshoreMode ? "" : s.started
           ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + (opts.sequential && s.running && nextStep ? " secondary" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
           : '<button type="button" class="chrono-btn start" data-type="start">Start</button>') +
         '<button type="button" class="chrono-btn stop" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
@@ -217,7 +222,7 @@
         // one step at a time: the last step of the cycle (pressed or passed) closes the weld, and the next weld starts
         const steps = C.stepsOf(C.modeOf(doc));
         // on the PC as on the phone: the last step of the cycle closes the weld, and the next weld starts
-        if (stepType === steps[steps.length - 1].type) doc.events.push({ type: "weld", t });
+        if (C.modeOf(doc) !== "onshore" && stepType === steps[steps.length - 1].type) doc.events.push({ type: "weld", t });
       }
       await persist();
       render();
