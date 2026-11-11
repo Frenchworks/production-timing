@@ -41,8 +41,11 @@
         return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + '</td><td class="fit">' + clock(rec.start) + "</td>" + cells + '<td class="fit col-air">' + C.fmt(rec.airSec) + '</td><td class="fit col-clamp">' + C.fmt(rec.clampSec) + '</td><td class="fit col-max">' + C.fmt(rec.maxSec) + '</td><td class="col-comment"><input type="text" class="chrono-comment" data-start="' + rec.start + '" value="' + esc(rec.comment) + '" placeholder="Comment"></td></tr>';
       })
       .join("");
-    const total = '<tr class="chrono-sum"><td colspan="2">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + "<td></td><td></td><td></td><td></td></tr>";
-    const avg = '<tr class="chrono-sum"><td colspan="2">Average</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].avg) + "</td>").join("") + "<td></td><td></td><td></td><td></td></tr>";
+    // totals and averages of the Cabin 1 up and Clamp move columns, over the welds where they are known
+    const agg = (key) => { const vals = r.records.map((x) => x[key]).filter((v) => typeof v === "number"); const t = vals.reduce((a, b) => a + b, 0); return { total: vals.length ? t : null, avg: vals.length ? t / vals.length : null }; };
+    const airAgg = agg("airSec"), clampAgg = agg("clampSec");
+    const total = '<tr class="chrono-sum"><td colspan="3">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + "<td>" + C.fmt(airAgg.total) + "</td><td>" + C.fmt(clampAgg.total) + "</td></tr>";
+    const avg = '<tr class="chrono-sum"><td colspan="3">Average</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].avg) + "</td>").join("") + "<td>" + C.fmt(airAgg.avg) + "</td><td>" + C.fmt(clampAgg.avg) + "</td></tr>";
     return '<div class="chrono-table-wrap"><table class="chrono-table"><thead>' + head + "</thead><tbody>" + rows + total + avg + "</tbody></table></div>" + (cumulativeSteps ? '<p class="small chrono-legend-note">Big figure: duration of the step. Small figure: cumulative time from the start of the run. The longest step of each run is highlighted.</p>' : "");
   }
 
