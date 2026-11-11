@@ -72,7 +72,7 @@
       // the number and the name of the step, on a slope under the bar
       const ax = M.l + i * slot + slot / 2;
       const ay = M.t + plotH + 14;
-      out += '<text x="' + ax + '" y="' + ay + '" text-anchor="end" transform="rotate(-35 ' + ax + " " + ay + ')">' + (i + 1) + " " + esc(s.label) + "</text>";
+      out += '<text x="' + ax + '" y="' + ay + '" text-anchor="end" transform="rotate(-35 ' + ax + " " + ay + ')">' + esc(s.col) + " " + esc(s.label) + "</text>";
     });
     out += '<rect x="' + M.l + '" y="2" width="10" height="10" fill="#6A99AD"/><text x="' + (M.l + 14) + '" y="11">Total</text>';
     out += '<rect x="' + (M.l + 70) + '" y="2" width="10" height="10" fill="#C8DC1B"/><text x="' + (M.l + 84) + '" y="11">Average</text>';
