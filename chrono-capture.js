@@ -10,7 +10,8 @@
   const C = root.ChronoCore;
 
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const clock = (t) => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  // times are shown in UTC, the zone they are recorded in: the same on every PC, whatever its clock
+  const clock = (t) => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "UTC" });
 
   // Step times: the duration of each step (PC, default), or the time since the start of the weld (cumulative, as the chrono workbook)
   let cumulativeSteps = false;
