@@ -34,7 +34,7 @@
             const d = rec.durations[s.type];
             const cum = rec.steps[s.type];
             const hl = rec.highlight.indexOf(s.type) >= 0 ? ' class="chrono-max"' : "";
-            return "<td" + hl + ">" + (typeof d === "number" ? C.fmt(d) : "") + (cumulativeSteps && typeof cum === "number" ? "<br><small>" + C.fmt(cum) + "</small>" : "") + "</td>";
+            return "<td" + hl + ">" + (typeof d === "number" ? C.fmt(d) : "") + (cumulativeSteps && typeof cum === "number" && !(rec.skipped && rec.skipped[s.type]) ? "<br><small>" + C.fmt(cum) + "</small>" : "") + "</td>";
           })
           .join("");
         return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + '</td><td class="fit">' + clock(rec.start) + "</td>" + cells + '<td class="fit col-air">' + C.fmt(rec.airSec) + '</td><td class="fit col-clamp">' + C.fmt(rec.clampSec) + '</td><td class="fit col-max">' + C.fmt(rec.maxSec) + '</td><td class="col-comment"><input type="text" class="chrono-comment" data-start="' + rec.start + '" value="' + esc(rec.comment) + '" placeholder="Comment"></td></tr>';

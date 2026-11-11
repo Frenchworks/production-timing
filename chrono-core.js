@@ -200,7 +200,16 @@
 
     // time in the air: from "Cabin 1 finish" of a weld (cabin lifted) to "Cabin in position" of the next weld (cabin down again)
     if (mode === "onshore") {
-      for (const rec of records) rec.airSec = typeof rec.steps.cabin1Ready === "number" && typeof rec.steps.cabinUpN === "number" ? rec.steps.cabin1Ready - rec.steps.cabinUpN : null;
+      records.forEach((rec, i) => {
+        if (typeof rec.steps.cabinUpN !== "number") { rec.airSec = null; return; }
+        if (rec.skipped && rec.skipped.cabin1Ready) {
+          // Cabin ready N+1 skipped: the travel runs from Cabin up N to the Cabin in position of the next weld
+          const nx = records.slice(i + 1).find((r) => typeof r.steps.cabinIn === "number");
+          rec.airSec = nx ? (nx.start - rec.start) / 1000 + nx.steps.cabinIn - rec.steps.cabinUpN : null;
+          return;
+        }
+        rec.airSec = typeof rec.steps.cabin1Ready === "number" ? rec.steps.cabin1Ready - rec.steps.cabinUpN : null;
+      });
     }
     for (let i = 0; mode !== "onshore" && i + 1 < records.length; i++) {
       const rec = records[i];
