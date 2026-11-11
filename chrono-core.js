@@ -372,7 +372,7 @@
     const has = (o, k) => !!o && typeof o.steps[k] === "number";
     return {
       fitUpReady: !open || !has(open, "fitUpReady") || has(open, "clampIn"),
-      cabinIn: !cabin,
+      cabinIn: !cabin && has(open, "fitUpReady"),
       cabinUpN: !!cabin && typeof cabin.cabinUpN !== "number",
       cabin1Ready: !!cabin && typeof cabin.cabinUpN === "number" && typeof cabin.cabin1Ready !== "number",
       clampReleased: !!open && !has(open, "clampReleased"),
