@@ -123,13 +123,16 @@
       const openAt = (t) => { cur = { start: t, steps: {}, skipped: {} }; };
       for (const ev of doc.events || []) {
         const t = Date.parse(ev.t);
-        if (ev.type === "start") { sessionStart = t; openAt(t); cabinRec = null; continue; }
+        // the session Start validates the Fit up ready N of the first weld
+        if (ev.type === "start") { sessionStart = t; openAt(t); cur.steps.fitUpReady = 0; cabinRec = null; continue; }
         if (ev.type === "stop") { if (cur) closeRecord(t); sessionStop = t; continue; }
         if (ev.type === "weld") { if (cur) { closeRecord(t); openAt(t); } continue; }
         if (ev.type === "skip") { if (cur && stepTypes.indexOf(ev.step) >= 0) cur.skipped[ev.step] = true; continue; }
         if (!cur) continue;
         if (ev.type === "fitUpReady") {
-          if (typeof cur.steps.fitUpReady === "number") { closeRecord(t); openAt(t); cur.steps.fitUpReady = 0; }
+          // a second Fit up ready cuts the weld; the first weld of a session keeps its Fit up ready from the session Start (older sessions: a Fit up ready just after the Start)
+          const firstOfSession = closed.length === 0 && Object.keys(cur.steps).length === 1;
+          if (typeof cur.steps.fitUpReady === "number" && !firstOfSession) { closeRecord(t); openAt(t); cur.steps.fitUpReady = 0; }
           else cur.steps.fitUpReady = relTo(cur, t);
         } else if (ev.type === "cabinIn") {
           cabinRec = cur;
@@ -358,7 +361,7 @@
       cabinIn: !cabin,
       cabinUpN: !!cabin && typeof cabin.cabinUpN !== "number",
       cabin1Ready: !!cabin && typeof cabin.cabinUpN === "number",
-      clampReleased: !!open,
+      clampReleased: !!open && !has(open, "clampReleased"),
       clampIn: has(open, "clampReleased") && !has(open, "clampIn"),
     };
   }
