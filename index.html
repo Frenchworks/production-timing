@@ -154,7 +154,7 @@
           var file = new File([text], name, { type: "application/json" });
           try {
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
-              await navigator.share({ files: [file], title: name });
+              await navigator.share({ files: [file] });
               note.textContent = "Shared: " + name;
               return;
             }
