@@ -369,10 +369,14 @@
       const st = recs[i].steps;
       if (typeof st.cabinIn === "number" && !(typeof st.cabinUpN === "number" && typeof st.cabin1Ready === "number")) { cabin = st; break; }
     }
+    // the cabin of a weld starts only in that weld: after its Fit up ready (a new weld after the last cabin)
+    let lastCabin = -1;
+    recs.forEach((r, i) => { if (typeof r.steps.cabinIn === "number") lastCabin = i; });
+    const openIdx = recs.length - 1;
     const has = (o, k) => !!o && typeof o.steps[k] === "number";
     return {
       fitUpReady: !open || !has(open, "fitUpReady") || has(open, "clampIn"),
-      cabinIn: !cabin && has(open, "fitUpReady"),
+      cabinIn: !cabin && has(open, "fitUpReady") && (lastCabin < 0 || openIdx > lastCabin),
       cabinUpN: !!cabin && typeof cabin.cabinUpN !== "number",
       cabin1Ready: !!cabin && typeof cabin.cabinUpN === "number" && typeof cabin.cabin1Ready !== "number",
       clampReleased: !!open && !has(open, "clampReleased"),
