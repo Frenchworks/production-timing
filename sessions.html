@@ -21,6 +21,13 @@
     .empty { opacity: 0.7; }
     .msg { min-height: 1.2em; margin-top: 10px; }
     input[type=file] { display: none; }
+      .danger { color: #b00000; }
+      .del-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+      .del-modal[hidden] { display: none; }
+      .del-card { width: 100%; max-width: 360px; box-sizing: border-box; padding: 20px; border-radius: 6px; background: #2c2c2c; color: #f0f0f0; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+      .del-card p { margin: 0 0 16px; }
+      .del-actions { display: flex; gap: 8px; justify-content: flex-end; }
+      .danger-btn { background: #b00000; color: #fff; border: 0; }
     [data-open] { min-width: 84px; min-height: 40px; background: #fff; color: #000; border: 1px solid #d6d6d6; border-radius: 6px; font-weight: bold; }
             /* portrait: the title sits lower, under the status bar */
       @media (orientation: portrait) { body { padding-top: max(36px, calc(env(safe-area-inset-top, 0px) + 24px)); } }
@@ -36,6 +43,16 @@
   <div class="msg" id="msg" role="status"></div>
   <h2 style="font-size:1em;margin:12px 0 6px;">Last 10 sessions</h2>
   <div class="list" id="list"></div>
+
+  <div id="del-modal" class="del-modal" hidden>
+    <div class="del-card" role="dialog" aria-label="Delete session">
+      <p id="del-text"></p>
+      <div class="del-actions">
+        <button type="button" class="chrono-btn secondary" id="del-cancel">Cancel</button>
+        <button type="button" class="chrono-btn danger-btn" id="del-ok">Delete</button>
+      </div>
+    </div>
+  </div>
 
   <script src="chrono-core.js"></script>
   <script>
@@ -73,11 +90,37 @@
           var joints = C.buildRecords(d).joints;
           return '<div class="row"><div><b>' + escapeHtml(d.title || "Session") + "</b>" + (d.sessionId === cur ? " (current)" : "") +
             "<small>" + escapeHtml(new Date(ChronoCore.parseWall(d.createdAt)).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" })) + " · " + joints + " welds · " + escapeHtml(d.device || "") + "</small></div>" +
-            '<button type="button" class="chrono-btn" data-open="' + escapeHtml(d.sessionId) + '">Open</button></div>';
+            '<span class="row-actions"><button type="button" class="chrono-btn" data-open="' + escapeHtml(d.sessionId) + '">Open</button> <button type="button" class="chrono-btn danger" data-delete="' + escapeHtml(d.sessionId) + '">Delete</button></span></div>';
         }).join("");
       }
 
+      // delete: a message window asks for the confirmation, Delete in it removes the session
+      var modal = document.getElementById("del-modal");
+      var pending = null;
+      function deleteSession(id) {
+        var rest = readHistory().filter(function (d) { return d.sessionId !== id; });
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(rest));
+        var cur = null;
+        try { cur = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) { cur = null; }
+        if (cur && cur.sessionId === id) localStorage.removeItem(KEY);
+        render();
+      }
+      document.getElementById("del-cancel").addEventListener("click", function () { modal.hidden = true; pending = null; });
+      modal.addEventListener("click", function (ev) { if (ev.target === modal) { modal.hidden = true; pending = null; } });
+      document.getElementById("del-ok").addEventListener("click", function () {
+        if (pending) deleteSession(pending);
+        pending = null;
+        modal.hidden = true;
+      });
       list.addEventListener("click", function (ev) {
+        var del = ev.target.closest("button[data-delete]");
+        if (del) {
+          var d = readHistory().filter(function (x) { return x.sessionId === del.dataset.delete; })[0];
+          pending = del.dataset.delete;
+          document.getElementById("del-text").textContent = "Delete the session \"" + ((d && d.title) || "Session") + "\"? This cannot be undone.";
+          modal.hidden = false;
+          return;
+        }
         var b = ev.target.closest("button[data-open]");
         if (!b) return;
         var picked = readHistory().filter(function (d) { return d.sessionId === b.dataset.open; })[0];
