@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="chrono.css">
   <link rel="stylesheet" href="chrono-phone.css">
   <style>
+  @font-face { font-family: "dripicons-v2"; src: url("fonts/dripicons-v2.woff") format("woff"); font-weight: normal; font-style: normal; }
+  .dripicons-trash:before { font-family: "dripicons-v2"; content: "\e053"; font-size: 18px; line-height: 1; }
     :root { --boxborder: #4a4a4a; --card: #2c2c2c; --fg: #f0f0f0; }
     body { margin: 0; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); font: 14px system-ui, sans-serif; background: #1e1e1e; color: #eee; }
     header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -23,6 +25,7 @@
     input[type=file] { display: none; }
       .row-actions { display: flex; gap: 8px; flex-shrink: 0; }
       .row-actions .chrono-btn { min-width: 84px; }
+      .row-actions .trash { min-width: 48px; display: inline-flex; align-items: center; justify-content: center; }
       .danger { background: #BE0000; color: #fff; border: 0; text-shadow: none; }
       .del-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
       .del-modal[hidden] { display: none; }
@@ -93,7 +96,7 @@
           var joints = C.buildRecords(d).joints;
           return '<div class="row"><div><b>' + escapeHtml(d.title || "Session") + "</b>" + (d.sessionId === cur ? " (current)" : "") +
             "<small>" + escapeHtml(new Date(ChronoCore.parseWall(d.createdAt)).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" })) + " · " + joints + " welds · " + escapeHtml(d.device || "") + "</small></div>" +
-            '<span class="row-actions"><button type="button" class="chrono-btn" data-open="' + escapeHtml(d.sessionId) + '">Open</button> <button type="button" class="chrono-btn danger" data-delete="' + escapeHtml(d.sessionId) + '">Delete</button></span></div>';
+            '<span class="row-actions"><button type="button" class="chrono-btn" data-open="' + escapeHtml(d.sessionId) + '">Open</button> <button type="button" class="chrono-btn danger trash" aria-label="Delete" title="Delete" data-delete="' + escapeHtml(d.sessionId) + '"><span class="dripicons-trash" aria-hidden="true"></span></button></span></div>';
         }).join("");
       }
 
