@@ -28,7 +28,7 @@
       label: "Onshore",
       steps: [
         // chrono workbook order, without backweld. Two chains: clamp (released, next clamp in, next fit up) and cabin (in position, cabin up N, cabin up N+1)
-        { type: "fitUpReady", col: "1", label: "Start", button: "Start weld" },
+        { type: "fitUpReady", col: "1", label: "Fit up ready", button: "Fit up ready N" },
         { type: "cabinIn", col: "2", label: "Cabin in position", button: "Cabin in position" },
         { type: "clampReleased", col: "3", label: "Clamp released", button: "Clamp released" },
         { type: "clampIn", col: "4", label: "Clamp in position N+1", button: "Clamp in position" },
