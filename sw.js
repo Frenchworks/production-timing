@@ -1,5 +1,5 @@
 // Offline cache of the chrono page (works only on HTTPS or localhost).
-const CACHE = "chrono-v7";
+const CACHE = "chrono-v8";
 const FILES = ["./", "index.html", "chart.html", "chrono-core.js", "chrono-capture.js", "chrono.css", "chrono-phone.css", "sessions.html", "manifest.json", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-180.png"];
 
 self.addEventListener("install", (event) => {
