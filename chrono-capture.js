@@ -48,12 +48,28 @@
   // Bars: average and total per step, like the chart of the sheet
   function chartHtml(r) {
     // onshore: the Fit up ready column is the Start column (the weld start), so the step is not repeated
-    const steps = C.stepsOf(r.mode).filter((s) => !(r.mode === "onshore" && s.type === "fitUpReady"));
+    // onshore: the first bar is Fit up ready, the time from the Clamp in position of the previous weld to the start of this one (as the Fit up column of the table)
+    const fitItem = { type: "fitUpIntv", col: "1", label: "Fit up ready" };
+    const steps = (r.mode === "onshore" ? [fitItem] : []).concat(C.stepsOf(r.mode).filter((s) => !(r.mode === "onshore" && s.type === "fitUpReady")));
+    const fitStats = () => {
+      const vals = [];
+      const recs = r.records || [];
+      for (let i = 1; i < recs.length; i++) {
+        const prev = recs[i - 1], rec = recs[i];
+        if (prev.steps && typeof prev.steps.clampIn === "number") {
+          const v = (rec.start - prev.start) / 1000 - prev.steps.clampIn;
+          if (v >= 0) vals.push(v);
+        }
+      }
+      const total = vals.reduce((a, b) => a + b, 0);
+      return { total: vals.length ? total : null, avg: vals.length ? total / vals.length : null };
+    };
+    const statsOf = (s) => (s.type === "fitUpIntv" ? fitStats() : r.columns[s.type]);
     // the bottom margin holds the step names, written on a slope under each bar
     const W = 640, H = 236, M = { l: 48, r: 12, t: 16, b: 60 };
     const plotW = W - M.l - M.r, plotH = H - M.t - M.b;
-    const totals = steps.map((s) => r.columns[s.type].total || 0);
-    const avgs = steps.map((s) => r.columns[s.type].avg || 0);
+    const totals = steps.map((s) => statsOf(s).total || 0);
+    const avgs = steps.map((s) => statsOf(s).avg || 0);
     const max = Math.max(1, ...totals, ...avgs);
     const slot = plotW / steps.length;
     const barW = slot * 0.36;
