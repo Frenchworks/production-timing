@@ -140,6 +140,8 @@
           }
           else cur.steps.fitUpReady = relTo(cur, t);
         } else if (ev.type === "cabinIn") {
+          // a weld has one Cabin in position: a press before its Fit up ready does not change the weld before
+          if (typeof cur.steps.cabinIn === "number") continue;
           cabinRec = cur;
           cur.steps.cabinIn = relTo(cur, t);
         } else if (ev.type === "cabinUpN" || ev.type === "cabin1Ready") {
