@@ -137,7 +137,7 @@
 
         function fileName(doc) {
           var d = new Date(doc.createdAt);
-          var stamp = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") + "_" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0");
+          var stamp = d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0") + "_" + String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0");
           // the title of the session goes in the file name, without characters that a file name cannot hold
           var t = String(doc.title || "").trim().slice(0, 60).replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "");
           return "chrono_" + (t ? t + "_" : "") + stamp + "_" + doc.sessionId.slice(0, 8) + ".json";

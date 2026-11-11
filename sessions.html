@@ -60,7 +60,7 @@
         try { var c = JSON.parse(localStorage.getItem(KEY) || "null"); return c ? c.sessionId : null; } catch (e) { return null; }
       }
       function label(d) {
-        return (d.title || "Session") + " · " + new Date(d.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+        return (d.title || "Session") + " · " + new Date(d.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" });
       }
       function escapeHtml(s) {
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
@@ -72,7 +72,7 @@
         list.innerHTML = items.map(function (d) {
           var joints = C.buildRecords(d).joints;
           return '<div class="row"><div><b>' + escapeHtml(d.title || "Session") + "</b>" + (d.sessionId === cur ? " (current)" : "") +
-            "<small>" + escapeHtml(new Date(d.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })) + " · " + joints + " welds · " + escapeHtml(d.device || "") + "</small></div>" +
+            "<small>" + escapeHtml(new Date(d.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" })) + " · " + joints + " welds · " + escapeHtml(d.device || "") + "</small></div>" +
             '<button type="button" class="chrono-btn" data-open="' + escapeHtml(d.sessionId) + '">Open</button></div>';
         }).join("");
       }
