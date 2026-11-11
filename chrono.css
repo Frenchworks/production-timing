@@ -18,6 +18,7 @@
 /* Start (or Next weld) spans the KP and Weld columns, Stop sits in the Start column */
 .chrono-steps > .chrono-btn.start, .chrono-steps > .chrono-btn.weld { grid-column: 1 / span 2; }
 .chrono-steps > .chrono-btn.stop { grid-column: 3; }
+.chrono-steps > .chrono-btn.stop.solo { grid-column: 1 / span 3; }
 .chrono-spacer { display: block; }
 /* Cancel last on the left, New session on the right */
 .chrono-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
@@ -104,6 +105,8 @@
 /* fixed layout: the columns KP, Weld, Start and Max fit their content, and the step columns share the rest equally */
 .chrono-table { table-layout: fixed; }
 .chrono-table th.fit, .chrono-table td.fit { white-space: nowrap; }
+/* a header that is too long for its column wraps onto a second line */
+.chrono-table th.wrap { white-space: normal; }
 /* the headers of In the air and Clamp move wrap on two lines in their narrow columns */
 .chrono-table th.col-air, .chrono-table th.col-clamp { white-space: normal; }
 .chrono-table th, .chrono-table td { box-sizing: border-box; }

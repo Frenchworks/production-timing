@@ -24,7 +24,7 @@
     // onshore: the Fit up ready column is the Start column (the weld start), so the step is not repeated
     const steps = C.stepsOf(r.mode).filter((s) => !(r.mode === "onshore" && s.type === "fitUpReady"));
     // KP, Weld, Start and Max take the width of their content (class fit); the step columns share the rest equally
-    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit">Fit up ready</th>' + steps.map(stepHeader).join("") + '<th class="fit col-air">Cabin 1 up</th><th class="fit col-clamp">Clamp move</th><th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
+    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit wrap">Fit up ready</th>' + steps.map(stepHeader).join("") + '<th class="fit col-air">Cabin 1 up</th><th class="fit col-clamp">Clamp move</th><th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
     const rows = r.records
       .map((rec) => {
         const label = rec.open ? "open" : rec.weldLabel;
@@ -192,7 +192,8 @@
         (weldInRow ? "" : s.started && onshoreMode ? "" : s.started
           ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + (opts.sequential && s.running && nextStep ? " secondary" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
           : '<button type="button" class="chrono-btn start" data-type="start">Start</button>') +
-        '<button type="button" class="chrono-btn stop" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
+        // once the session has started, Stop takes the place of the Start: it spans the KP, Weld and Start columns
+        '<button type="button" class="chrono-btn stop' + (onshoreMode && s.started ? " solo" : "") + '" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
         stepButtons +
         "</div></div>" +
         '<div class="chrono-report-slot"></div>';
