@@ -30,7 +30,7 @@
         const label = rec.open ? "open" : rec.weldLabel;
         const cells = steps
           .map((s) => {
-            // the duration of the step is the main figure (the longest one is highlighted); the cumulative time from the start of the weld is under it
+            // the duration of the step is the main figure (the longest one is highlighted); the cumulative time from the start of the run is under it
             const d = rec.durations[s.type];
             const cum = rec.steps[s.type];
             const hl = rec.highlight.indexOf(s.type) >= 0 ? ' class="chrono-max"' : "";
@@ -42,7 +42,7 @@
       .join("");
     const total = '<tr class="chrono-sum"><td colspan="2">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + "<td></td><td></td><td></td><td></td></tr>";
     const avg = '<tr class="chrono-sum"><td colspan="2">Average</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].avg) + "</td>").join("") + "<td></td><td></td><td></td><td></td></tr>";
-    return '<div class="chrono-table-wrap"><table class="chrono-table"><thead>' + head + "</thead><tbody>" + rows + total + avg + "</tbody></table></div>" + (cumulativeSteps ? '<p class="small chrono-legend-note">Big figure: duration of the step. Small figure: cumulative time from the start of the weld. The longest step of each weld is highlighted.</p>' : "");
+    return '<div class="chrono-table-wrap"><table class="chrono-table"><thead>' + head + "</thead><tbody>" + rows + total + avg + "</tbody></table></div>" + (cumulativeSteps ? '<p class="small chrono-legend-note">Big figure: duration of the step. Small figure: cumulative time from the start of the run. The longest step of each run is highlighted.</p>' : "");
   }
 
   // Bars: average and total per step, like the chart of the sheet
