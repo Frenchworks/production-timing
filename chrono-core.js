@@ -132,7 +132,12 @@
         if (ev.type === "fitUpReady") {
           // a second Fit up ready cuts the weld; the first weld of a session keeps its Fit up ready from the session Start (older sessions: a Fit up ready just after the Start)
           const firstOfSession = closed.length === 0 && Object.keys(cur.steps).length === 1;
-          if (typeof cur.steps.fitUpReady === "number" && !firstOfSession) { closeRecord(t); openAt(t); cur.steps.fitUpReady = 0; }
+          if (typeof cur.steps.fitUpReady === "number" && !firstOfSession) {
+            // the next weld starts before Cabin up N is validated: Cabin ready N+1 is skipped (0:00); Cabin up N stays to validate
+            const cr = cabinRec;
+            if (cr && typeof cr.steps.cabinIn === "number" && typeof cr.steps.cabinUpN !== "number" && typeof cr.steps.cabin1Ready !== "number") { cr.steps.cabin1Ready = 0; cr.skipped.cabin1Ready = true; }
+            closeRecord(t); openAt(t); cur.steps.fitUpReady = 0;
+          }
           else cur.steps.fitUpReady = relTo(cur, t);
         } else if (ev.type === "cabinIn") {
           cabinRec = cur;
@@ -353,14 +358,14 @@
     let cabin = null;
     for (let i = recs.length - 1; i >= 0; i--) {
       const st = recs[i].steps;
-      if (typeof st.cabinIn === "number" && typeof st.cabin1Ready !== "number") { cabin = st; break; }
+      if (typeof st.cabinIn === "number" && !(typeof st.cabinUpN === "number" && typeof st.cabin1Ready === "number")) { cabin = st; break; }
     }
     const has = (o, k) => !!o && typeof o.steps[k] === "number";
     return {
       fitUpReady: !open || !has(open, "fitUpReady") || has(open, "clampIn"),
       cabinIn: !cabin,
       cabinUpN: !!cabin && typeof cabin.cabinUpN !== "number",
-      cabin1Ready: !!cabin && typeof cabin.cabinUpN === "number",
+      cabin1Ready: !!cabin && typeof cabin.cabinUpN === "number" && typeof cabin.cabin1Ready !== "number",
       clampReleased: !!open && !has(open, "clampReleased"),
       clampIn: has(open, "clampReleased") && !has(open, "clampIn"),
     };

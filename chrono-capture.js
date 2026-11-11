@@ -21,9 +21,10 @@
 
   // Table of the records: one row per weld, the largest step of each row is highlighted
   function tableHtml(r) {
-    const steps = C.stepsOf(r.mode);
+    // onshore: the Fit up ready column is the Start column (the weld start), so the step is not repeated
+    const steps = C.stepsOf(r.mode).filter((s) => !(r.mode === "onshore" && s.type === "fitUpReady"));
     // KP, Weld, Start and Max take the width of their content (class fit); the step columns share the rest equally
-    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit">Start</th>' + steps.map(stepHeader).join("") + '<th class="fit col-air">Cabin 1 up</th><th class="fit col-clamp">Clamp move</th><th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
+    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit">Fit up ready</th>' + steps.map(stepHeader).join("") + '<th class="fit col-air">Cabin 1 up</th><th class="fit col-clamp">Clamp move</th><th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
     const rows = r.records
       .map((rec) => {
         const label = rec.open ? "open" : rec.weldLabel;
@@ -46,7 +47,8 @@
 
   // Bars: average and total per step, like the chart of the sheet
   function chartHtml(r) {
-    const steps = C.stepsOf(r.mode);
+    // onshore: the Fit up ready column is the Start column (the weld start), so the step is not repeated
+    const steps = C.stepsOf(r.mode).filter((s) => !(r.mode === "onshore" && s.type === "fitUpReady"));
     // the bottom margin holds the step names, written on a slope under each bar
     const W = 640, H = 236, M = { l: 48, r: 12, t: 16, b: 60 };
     const plotW = W - M.l - M.r, plotH = H - M.t - M.b;
