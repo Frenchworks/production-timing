@@ -123,8 +123,8 @@
       const openAt = (t) => { cur = { start: t, steps: {}, skipped: {} }; };
       for (const ev of doc.events || []) {
         const t = parseWall(ev.t);
-        // the session Start validates the Fit up ready N of the first weld
-        if (ev.type === "start") { sessionStart = t; openAt(t); cur.steps.fitUpReady = 0; cabinRec = null; continue; }
+        // the session Start only opens the session: the Fit up ready N of the first weld is pressed after it
+        if (ev.type === "start") { sessionStart = t; openAt(t); cabinRec = null; continue; }
         if (ev.type === "stop") { if (cur) closeRecord(t); sessionStop = t; continue; }
         if (ev.type === "weld") { if (cur) { closeRecord(t); openAt(t); } continue; }
         if (ev.type === "skip") { if (cur && stepTypes.indexOf(ev.step) >= 0) cur.skipped[ev.step] = true; continue; }
@@ -387,9 +387,10 @@
     const recs = buildRecords(doc).records;
     const open = recs.length && recs[recs.length - 1].open ? recs[recs.length - 1] : null;
     let cabin = null;
+    let cabinIdx = -1;
     for (let i = recs.length - 1; i >= 0; i--) {
       const st = recs[i].steps;
-      if (typeof st.cabinIn === "number" && !(typeof st.cabinUpN === "number" && typeof st.cabin1Ready === "number")) { cabin = st; break; }
+      if (typeof st.cabinIn === "number" && !(typeof st.cabinUpN === "number" && typeof st.cabin1Ready === "number")) { cabin = st; cabinIdx = i; break; }
     }
     // the cabin of a weld starts only in that weld: after its Fit up ready (a new weld after the last cabin)
     let lastCabin = -1;
@@ -398,10 +399,12 @@
     const has = (o, k) => !!o && typeof o.steps[k] === "number";
     return {
       fitUpReady: !open || !has(open, "fitUpReady") || has(open, "clampIn"),
-      cabinIn: !cabin && has(open, "fitUpReady") && (lastCabin < 0 || openIdx > lastCabin),
+      // a new weld whose Fit up ready is pressed before the Cabin ready N+1 of the weld before: that Cabin ready is off, and the Cabin in position of the new weld is on
+      cabinIn: (!cabin || cabinIdx < openIdx) && has(open, "fitUpReady") && (lastCabin < 0 || openIdx > lastCabin),
       cabinUpN: !!cabin && typeof cabin.cabinUpN !== "number",
-      cabin1Ready: !!cabin && typeof cabin.cabinUpN === "number" && typeof cabin.cabin1Ready !== "number",
-      clampReleased: !!open && !has(open, "clampReleased"),
+      cabin1Ready: !!cabin && cabinIdx === openIdx && typeof cabin.cabinUpN === "number" && typeof cabin.cabin1Ready !== "number",
+      // Clamp released of a weld needs its Fit up ready first
+      clampReleased: !!open && has(open, "fitUpReady") && !has(open, "clampReleased"),
       clampIn: has(open, "clampReleased") && !has(open, "clampIn"),
     };
   }

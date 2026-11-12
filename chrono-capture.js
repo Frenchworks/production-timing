@@ -70,7 +70,14 @@
     };
     const statsOf = (s) => (s.type === "fitUpIntv" ? fitStats() : r.columns[s.type]);
     // the bottom margin holds the step names, written on a slope under each bar
-    const W = 640, H = 236, M = { l: 48, r: 12, t: 16, b: 60 };
+    const W = 640, H = 248, M = { l: 48, r: 12, t: 16, b: 72 };
+    // a name longer than 16 characters is split in two lines, at the middle word
+    const labelLines = (text) => {
+      const words = text.split(" ");
+      if (text.length <= 16 || words.length < 2) return [text];
+      const half = Math.ceil(words.length / 2);
+      return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
+    };
     const plotW = W - M.l - M.r, plotH = H - M.t - M.b;
     const totals = steps.map((s) => statsOf(s).total || 0);
     const avgs = steps.map((s) => statsOf(s).avg || 0);
@@ -92,7 +99,9 @@
       // the number and the name of the step, on a slope under the bar
       const ax = M.l + i * slot + slot / 2;
       const ay = M.t + plotH + 14;
-      out += '<text x="' + ax + '" y="' + ay + '" text-anchor="end" transform="rotate(-35 ' + ax + " " + ay + ')">' + esc(s.col) + " " + esc(s.label) + "</text>";
+      // a long name goes on two lines (each line starts at the same x, the second one 11 px lower)
+      const nameLines = labelLines(s.col + " " + s.label).map((l, k) => '<tspan x="' + ax + '" dy="' + (k ? 11 : 0) + '">' + esc(l) + "</tspan>").join("");
+      out += '<text x="' + ax + '" y="' + ay + '" text-anchor="end" transform="rotate(-45 ' + ax + " " + ay + ')">' + nameLines + "</text>";
     });
     out += '<rect x="' + M.l + '" y="2" width="10" height="10" fill="#6A99AD"/><text x="' + (M.l + 14) + '" y="11">Total</text>';
     out += '<rect x="' + (M.l + 70) + '" y="2" width="10" height="10" fill="#C8DC1B"/><text x="' + (M.l + 84) + '" y="11">Average</text>';
