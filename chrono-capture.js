@@ -22,10 +22,15 @@
 
   // Table of the records: one row per weld, the largest step of each row is highlighted
   function tableHtml(r) {
+    // offshore: the last columns are Fit up, Pull and Arc; onshore keeps Cabin 1 up and Clamp move
+    const off = r.mode === "offshore";
+    const tailHead = off ? '<th class="fit">Fit up</th><th class="fit">Pull</th><th class="fit">Arc</th>' : '<th class="fit col-air">Cabin 1 up</th><th class="fit col-clamp">Clamp move</th>';
+    const tailRow = (rec) => off ? '<td class="fit">' + C.fmt(rec.fitSec) + '</td><td class="fit">' + C.fmt(rec.pullSec) + '</td><td class="fit">' + C.fmt(rec.arcSec) + '</td>' : '<td class="fit col-air">' + C.fmt(rec.airSec) + '</td><td class="fit col-clamp">' + C.fmt(rec.clampSec) + '</td>';
+    const tailTotals = (k) => (off ? ["fitSec", "pullSec", "arcSec"].map((f) => agg(f)) : [agg("airSec"), agg("clampSec")]).map((a) => "<td>" + C.fmt(a[k]) + "</td>").join("");
     // onshore: the Fit up ready column is the Start column (the weld start), so the step is not repeated
     const steps = C.stepsOf(r.mode).filter((s) => !(r.mode === "onshore" && s.type === "fitUpReady"));
     // KP, Weld, Start and Max take the width of their content (class fit); the step columns share the rest equally
-    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit wrap">Fit up ready</th>' + steps.map(stepHeader).join("") + '<th class="fit col-air">Cabin 1 up</th><th class="fit col-clamp">Clamp move</th><th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
+    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit wrap">Fit up ready</th>' + steps.map(stepHeader).join("") + tailHead + '<th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
     const rows = r.records
       .map((rec) => {
         const label = rec.open ? "open" : rec.weldLabel;
@@ -38,14 +43,14 @@
             return "<td" + hl + ">" + (typeof d === "number" ? C.fmt(d) : "") + (cumulativeSteps && typeof cum === "number" && !(rec.skipped && rec.skipped[s.type]) ? "<br><small>" + C.fmt(cum) + "</small>" : "") + "</td>";
           })
           .join("");
-        return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + '</td><td class="fit">' + clock(rec.start) + "</td>" + cells + '<td class="fit col-air">' + C.fmt(rec.airSec) + '</td><td class="fit col-clamp">' + C.fmt(rec.clampSec) + '</td><td class="fit col-max">' + C.fmt(rec.maxSec) + '</td><td class="col-comment"><input type="text" class="chrono-comment" data-start="' + rec.start + '" value="' + esc(rec.comment) + '" placeholder="Comment"></td></tr>';
+        return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + '</td><td class="fit">' + clock(rec.start) + "</td>" + cells + tailRow(rec) + '<td class="fit col-max">' + C.fmt(rec.maxSec) + '</td><td class="col-comment"><input type="text" class="chrono-comment" data-start="' + rec.start + '" value="' + esc(rec.comment) + '" placeholder="Comment"></td></tr>';
       })
       .join("");
     // totals and averages of the Cabin 1 up and Clamp move columns, over the welds where they are known
     const agg = (key) => { const vals = r.records.map((x) => x[key]).filter((v) => typeof v === "number"); const t = vals.reduce((a, b) => a + b, 0); return { total: vals.length ? t : null, avg: vals.length ? t / vals.length : null }; };
     const airAgg = agg("airSec"), clampAgg = agg("clampSec");
-    const total = '<tr class="chrono-sum"><td colspan="3">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + "<td>" + C.fmt(airAgg.total) + "</td><td>" + C.fmt(clampAgg.total) + "</td></tr>";
-    const avg = '<tr class="chrono-sum"><td colspan="3">Average</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].avg) + "</td>").join("") + "<td>" + C.fmt(airAgg.avg) + "</td><td>" + C.fmt(clampAgg.avg) + "</td></tr>";
+    const total = '<tr class="chrono-sum"><td colspan="3">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + tailTotals("total") + "</tr>";
+    const avg = '<tr class="chrono-sum"><td colspan="3">Average</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].avg) + "</td>").join("") + tailTotals("avg") + "</tr>";
     return '<div class="chrono-table-wrap"><table class="chrono-table"><thead>' + head + "</thead><tbody>" + rows + total + avg + "</tbody></table></div>" + (cumulativeSteps ? '<p class="small chrono-legend-note">Big figure: duration of the step. Small figure: cumulative time from the start of the run. The longest step of each run is highlighted.</p>' : "");
   }
 

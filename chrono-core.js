@@ -34,6 +34,9 @@
         { type: "preheatEnd", col: "1b", label: "Preheat end", button: "Preheat end", option: "preheat" },
         { type: "cabinIn", col: "2", label: "Cabin in position", button: "Cabin in position" },
         { type: "clampReleased", col: "3", label: "Clamp released", button: "Clamp released" },
+        // blasting: start and end, before Clamp in position (an option, shown when it is on)
+        { type: "blastingStart", col: "3a", label: "Blasting start", button: "Blasting start", option: "blasting" },
+        { type: "blastingEnd", col: "3b", label: "Blasting end", button: "Blasting end", option: "blasting" },
         { type: "clampIn", col: "4", label: "Clamp in position N+1", button: "Clamp in position" },
         { type: "cabinUpN", col: "5", label: "Cabin up N", button: "Cabin up N" },
         { type: "cabin1Ready", col: "6", label: "Cabin ready N+1", button: "Cabin ready N+1" },
@@ -47,7 +50,8 @@
         { type: "startWeld", col: "D", label: "Start weld", button: "Start weld" },
         { type: "readyWs1", col: "E", label: "Ready at WS1", button: "Ready at WS1" },
         { type: "finIvt", col: "F", label: "Fin IVT", button: "Fin IVT" },
-        { type: "pullEnd", col: "G", label: "Pull end", button: "Pull end" },
+        { type: "pullStart", col: "G", label: "Pull start", button: "Pull start" },
+        { type: "pullEnd", col: "H", label: "Pull end", button: "Pull end" },
       ],
     },
   };
@@ -62,6 +66,7 @@
   // a step with an "option" is shown only when that option is on
   const OPTION_DEFS = {
     preheat: { label: "Preheat (start and end, after Fit up ready)", default: false },
+    blasting: { label: "Blasting (start and end, before Clamp in position)", default: false },
   };
   const OPTIONS = {};
   // the options of the open session: read from its document, or the default when it has none
@@ -221,6 +226,12 @@
       r.maxSec = values.length ? Math.max.apply(null, values) : null;
       // the longest step(s) of the weld are highlighted
       r.highlight = done.filter((k) => r.durations[k] >= r.maxSec);
+      // offshore: fit up (weld start to End of fit up), pull (Pull start to Pull end) and arc (Start weld to Fin IVT)
+      if (mode === "offshore") {
+        r.fitSec = typeof r.steps.fitUpEnd === "number" ? r.steps.fitUpEnd : null;
+        r.pullSec = typeof r.steps.pullStart === "number" && typeof r.steps.pullEnd === "number" ? r.steps.pullEnd - r.steps.pullStart : null;
+        r.arcSec = typeof r.steps.startWeld === "number" && typeof r.steps.finIvt === "number" ? r.steps.finIvt - r.steps.startWeld : null;
+      }
     }
 
     const columns = {};
@@ -440,6 +451,9 @@
       // preheat: the end follows the start, both once per weld
       preheatStart: OPTIONS.preheat && !!open && has(open, "fitUpReady") && !has(open, "preheatStart"),
       preheatEnd: OPTIONS.preheat && has(open, "preheatStart") && !has(open, "preheatEnd"),
+      // blasting: start and end once per weld, the start only before Clamp in position
+      blastingStart: OPTIONS.blasting && !!open && !has(open, "blastingStart") && !has(open, "clampIn"),
+      blastingEnd: OPTIONS.blasting && has(open, "blastingStart") && !has(open, "blastingEnd"),
     };
   }
 
