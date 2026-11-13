@@ -24,13 +24,14 @@
   function tableHtml(r) {
     // offshore: the last columns are Fit up, Pull and Arc; onshore keeps Cabin 1 up and Clamp move
     const off = r.mode === "offshore";
-    const tailHead = off ? '<th class="fit">Fit up</th><th class="fit">Pull</th><th class="fit">Arc</th>' : '<th class="fit col-air">Cabin 1 up</th><th class="fit col-clamp">Clamp move</th>';
-    const tailRow = (rec) => off ? '<td class="fit">' + C.fmt(rec.fitSec) + '</td><td class="fit">' + C.fmt(rec.pullSec) + '</td><td class="fit">' + C.fmt(rec.arcSec) + '</td>' : '<td class="fit col-air">' + C.fmt(rec.airSec) + '</td><td class="fit col-clamp">' + C.fmt(rec.clampSec) + '</td>';
+    const tailHead = off ? '<th class="fit col-air">Fit up</th><th class="fit col-clamp">Pull</th><th class="fit col-air">Arc</th>' : '<th class="fit col-air">Cabin 1 up</th><th class="fit col-clamp">Clamp move</th>';
+    const tailRow = (rec) => off ? '<td class="fit col-air">' + C.fmt(rec.fitSec) + '</td><td class="fit col-clamp">' + C.fmt(rec.pullSec) + '</td><td class="fit col-air">' + C.fmt(rec.arcSec) + '</td>' : '<td class="fit col-air">' + C.fmt(rec.airSec) + '</td><td class="fit col-clamp">' + C.fmt(rec.clampSec) + '</td>';
     const tailTotals = (k) => (off ? ["fitSec", "pullSec", "arcSec"].map((f) => agg(f)) : [agg("airSec"), agg("clampSec")]).map((a) => "<td>" + C.fmt(a[k]) + "</td>").join("");
     // onshore: the Fit up ready column is the Start column (the weld start), so the step is not repeated
-    const steps = C.stepsOf(r.mode).filter((s) => !(r.mode === "onshore" && s.type === "fitUpReady"));
+    // offshore: the Fit up ready column is not shown (the weld starts at it, the Start column gives the time)
+    const steps = C.stepsOf(r.mode).filter((s) => !(r.mode === "onshore" && s.type === "fitUpReady") && !(r.mode === "offshore" && s.type === "fitUpEnd"));
     // KP, Weld, Start and Max take the width of their content (class fit); the step columns share the rest equally
-    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit wrap">Fit up ready</th>' + steps.map(stepHeader).join("") + tailHead + '<th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
+    const head = '<tr><th class="fit">KP</th><th class="fit">Weld</th><th class="fit wrap">' + "1<br><small>Fit up ready</small>" + '</th>' + steps.map(stepHeader).join("") + tailHead + '<th class="fit col-max">Max</th><th class="col-comment">Comment</th></tr>';
     const rows = r.records
       .map((rec) => {
         const label = rec.open ? "open" : rec.weldLabel;
@@ -51,7 +52,7 @@
     const airAgg = agg("airSec"), clampAgg = agg("clampSec");
     const total = '<tr class="chrono-sum"><td colspan="3">Total</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].total) + "</td>").join("") + tailTotals("total") + "</tr>";
     const avg = '<tr class="chrono-sum"><td colspan="3">Average</td>' + steps.map((s) => "<td>" + C.fmt(r.columns[s.type].avg) + "</td>").join("") + tailTotals("avg") + "</tr>";
-    return '<div class="chrono-table-wrap"><table class="chrono-table"><thead>' + head + "</thead><tbody>" + rows + total + avg + "</tbody></table></div>" + (cumulativeSteps ? '<p class="small chrono-legend-note">Big figure: duration of the step. Small figure: cumulative time from the start of the run. The longest step of each run is highlighted.</p>' : "");
+    return '<div class="chrono-table-wrap"><table class="chrono-table' + (off ? ' chrono-offshore' : '') + '"><thead>' + head + "</thead><tbody>" + rows + total + avg + "</tbody></table></div>" + (cumulativeSteps ? '<p class="small chrono-legend-note">Big figure: duration of the step. Small figure: cumulative time from the start of the run. The longest step of each run is highlighted.</p>' : "");
   }
 
   // Bars: average and total per step, like the chart of the sheet
@@ -115,7 +116,7 @@
   }
 
   function summaryHtml(r) {
-    return '<div class="chrono-summary"><span>Joints <b>' + r.joints + "</b></span><span>Total <b>" + C.fmt(r.totalSeconds) + "</b></span><span>Average per joint <b>" + C.fmt(r.avgPerJoint) + "</b></span></div>";
+    return '<div class="chrono-summary"><span>Joints <b>' + r.joints + "</b></span>" + (r.sessionStart ? '<span>Start session <b>' + clock(r.sessionStart) + "</b></span>" : "") + "<span>Total <b>" + C.fmt(r.totalSeconds) + "</b></span><span>Average per joint <b>" + C.fmt(r.avgPerJoint) + "</b></span></div>";
   }
 
   // noChart: the chart is shown elsewhere (from the menu), not under the table
@@ -200,7 +201,8 @@
       }
       // on the phone, while the weld is running, Next weld sits to the right of Cancel last
       const onshoreMode = C.modeOf(doc) === "onshore";
-      const weldInRow = !onshoreMode && !!opts.sequential && s.started && !s.stopped;
+      // no Next weld button: a weld closes by itself at its last step (both modes)
+      const weldInRow = false;
       const body =
         '<div class="chrono-head">' +
         '<label class="chrono-field">Title<input type="text" class="chrono-title" value="' + esc(doc.title) + '"' + (s.started ? " disabled" : "") + "></label>" +
@@ -225,11 +227,12 @@
         (s.stopped ? '<button type="button" class="chrono-btn secondary next" data-type="new">New session</button>' : "") +
         "</div>" +
         '<div class="chrono-steps" style="--n:' + allSteps.length + '">' +
-        (weldInRow ? "" : s.started && onshoreMode ? "" : s.started
+        (weldInRow ? "" : s.started ? "" : s.started
           ? '<button type="button" class="chrono-btn weld' + (opts.sequential && s.running && !nextStep ? " next" : "") + (opts.sequential && s.running && nextStep ? " secondary" : "") + '" data-type="weld"' + (s.running ? "" : " disabled") + ">Next weld</button>"
-          : '<button type="button" class="chrono-btn start" data-type="start">Start</button>') +
+          : '<button type="button" class="chrono-btn start solo" data-type="start">' + (C.modeOf(doc) === "onshore" ? "Start at clamp in position" : "Start at the End of last pull") + '</button>') +
         // once the session has started, Stop takes the place of the Start: it spans the KP, Weld and Start columns
-        '<button type="button" class="chrono-btn stop' + (onshoreMode && s.started ? " solo" : "") + '" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" +
+        // no Stop button before the session starts (it replaces the Start button), in both modes
+        (s.started ? '<button type="button" class="chrono-btn stop' + (s.started ? " solo" : "") + '" data-type="stop"' + (s.running ? "" : " disabled") + ">Stop</button>" : "") +
         stepButtons +
         "</div></div>" +
         '<div class="chrono-report-slot"></div>';

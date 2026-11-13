@@ -19,6 +19,9 @@
 .chrono-steps > .chrono-btn.start, .chrono-steps > .chrono-btn.weld { grid-column: 1 / span 2; }
 .chrono-steps > .chrono-btn.stop { grid-column: 3; }
 .chrono-steps > .chrono-btn.stop.solo { grid-column: 1 / span 3; }
+/* offshore: the Start button alone in the row takes the same place as the Stop button (before the start there is no Stop) */
+.chrono-steps > .chrono-btn.start.solo { grid-column: 1 / span 3; }
+
 .chrono-spacer { display: block; }
 /* Cancel last on the left, New session on the right */
 .chrono-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
@@ -120,6 +123,9 @@
 .chrono-table .col-comment { width: 110px; text-align: left; white-space: normal; }
 /* the step columns keep a readable width: when the window is narrower, the table scrolls sideways instead of squeezing them */
 .chrono-table tr > :nth-child(n+4):not(.fit):not(.col-comment) { width: max(60px, calc((100% - 490px) / 5)); }
+/* offshore: three columns at the end (Fit up, Pull, Arc): the step columns share the rest, as onshore */
+.chrono-table.chrono-offshore tr > :nth-child(n+4):not(.fit):not(.col-comment) { width: max(60px, calc((100% - 554px) / 5)); }
+
 .chrono-comment { width: 100%; min-width: 0; height: 28px; font-size: 0.9em; padding: 0 6px; box-sizing: border-box; }
 .chrono-table th, .chrono-table td { border: 1px solid var(--boxborder, #d6d6d6); padding: 4px 6px; text-align: center; white-space: nowrap; }
 /* step names wrap on several lines so that the columns fit the window */

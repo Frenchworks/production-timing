@@ -46,12 +46,12 @@
     offshore: {
       label: "Offshore",
       steps: [
-        { type: "fitUpEnd", col: "C", label: "End of fit up", button: "End of fit up" },
-        { type: "startWeld", col: "D", label: "Start weld", button: "Start weld" },
-        { type: "readyWs1", col: "E", label: "Ready at WS1", button: "Ready at WS1" },
-        { type: "finIvt", col: "F", label: "Fin IVT", button: "Fin IVT" },
-        { type: "pullStart", col: "G", label: "Pull start", button: "Pull start" },
-        { type: "pullEnd", col: "H", label: "Pull end", button: "Pull end" },
+        { type: "fitUpEnd", col: "1", label: "Fit up ready", button: "Fit up ready" },
+        { type: "startWeld", col: "2", label: "Start weld", button: "Start weld" },
+        { type: "readyWs1", col: "3", label: "Ready at WS1", button: "Ready at WS1" },
+        { type: "finIvt", col: "4", label: "End inspection", button: "End inspection" },
+        { type: "pullStart", col: "5", label: "Pull start", button: "Pull start" },
+        { type: "pullEnd", col: "6", label: "Pull end", button: "Pull end" },
       ],
     },
   };
@@ -159,11 +159,15 @@
       for (const ev of doc.events || []) {
         const t = parseWall(ev.t);
         // the session Start only opens the session: the Fit up ready N of the first weld is pressed after it
-        if (ev.type === "start") { sessionStart = t; openAt(t); cabinRec = null; continue; }
+        if (ev.type === "start") { sessionStart = t; cur = null; cabinRec = null; continue; }
         if (ev.type === "stop") { if (cur) closeRecord(t); sessionStop = t; continue; }
         if (ev.type === "weld") { if (cur) { closeRecord(t); openAt(t); } continue; }
         if (ev.type === "skip") { if (cur && stepTypes.indexOf(ev.step) >= 0) cur.skipped[ev.step] = true; continue; }
+        // the first weld opens at its Fit up ready (before it there is no weld yet)
+        if (!cur && ev.type === "fitUpReady" && closed.length === 0) openAt(t);
         if (!cur) continue;
+        // the first weld of the session starts at its Fit up ready (the Start only opens the session)
+        if (ev.type === "fitUpReady" && closed.length === 0 && typeof cur.steps.fitUpReady !== "number") { cur.start = t; cur.steps = {}; cur.skipped = {}; }
         if (ev.type === "fitUpReady") {
           // a second Fit up ready cuts the weld; the first weld of a session keeps its Fit up ready from the session Start (older sessions: a Fit up ready just after the Start)
           const firstOfSession = closed.length === 0 && Object.keys(cur.steps).length === 1;
@@ -189,9 +193,11 @@
     }
     for (const ev of mode === "onshore" ? [] : doc.events || []) {
       const t = parseWall(ev.t);
+      // the first weld of the session opens at its Fit up ready (End of fit up)
+      if (!cur && ev.type === "fitUpEnd" && closed.length === 0) cur = { start: t, steps: {}, skipped: {} };
       if (ev.type === "start") {
         sessionStart = t;
-        cur = { start: t, steps: {}, skipped: {} };
+        cur = null;
       } else if (ev.type === "weld") {
         if (!cur) continue;
         closeRecord(t);
