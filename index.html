@@ -45,6 +45,8 @@
       .chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; color: var(--title); }
       .chart-head button { min-height: 40px; padding: 0 14px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--bg); color: var(--fg); font-weight: bold; cursor: pointer; }
       .mode-menu p { margin: 0; font-size: 0.8em; opacity: 0.8; }
+      .mode-menu label { display: flex; align-items: center; gap: 10px; min-height: 48px; font-weight: bold; padding: 0 4px; }
+      .mode-menu label input { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; }
       .mode-menu button { min-height: 48px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--bg); color: var(--fg); font-size: 1em; font-weight: bold; cursor: pointer; text-align: left; padding: 0 14px; }
       .mode-menu button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--darken); }
               /* portrait: the title and the menu sit lower, under the status bar */
@@ -75,6 +77,11 @@
           <p>Mode (before Start)</p>
           <button type="button" data-mode="onshore">Onshore</button>
           <button type="button" data-mode="offshore">Offshore</button>
+        </div>
+        <button type="button" id="settings-sub-btn" aria-expanded="false" aria-controls="settings-sub">Settings</button>
+        <div id="settings-sub" class="mode-group" role="group" aria-label="Settings" hidden>
+          <p>Options of this session</p>
+          <div id="settings-options"></div>
         </div>
         <button type="button" id="sessions-btn">Sessions</button>
         <button type="button" id="chart-btn">Chart</button>
@@ -210,6 +217,28 @@
           if (modeMenu.contains(ev.target) || menuBtn.contains(ev.target)) return;
           modeMenu.hidden = true;
           menuBtn.setAttribute("aria-expanded", "false");
+        });
+        // Settings is a sub-menu too: the options of the session (the same as on the PC)
+        var settingsSub = document.getElementById("settings-sub");
+        var settingsSubBtn = document.getElementById("settings-sub-btn");
+        var settingsBox = document.getElementById("settings-options");
+        settingsBox.innerHTML = Object.keys(ChronoCore.OPTION_DEFS).map(function (id) {
+          return '<label><input type="checkbox" data-option="' + id + '"> ' + ChronoCore.OPTION_DEFS[id].label + "</label>";
+        }).join("");
+        function markOptions() {
+          var o = ui.getDoc().options || {};
+          settingsBox.querySelectorAll("input[data-option]").forEach(function (input) { input.checked = !!o[input.dataset.option]; });
+        }
+        settingsSubBtn.addEventListener("click", function () {
+          settingsSub.hidden = !settingsSub.hidden;
+          settingsSubBtn.setAttribute("aria-expanded", String(!settingsSub.hidden));
+          markOptions();
+        });
+        settingsBox.addEventListener("change", async function (ev) {
+          if (!ev.target.dataset.option) return;
+          await ui.setOptions({ [ev.target.dataset.option]: ev.target.checked });
+          note.textContent = "";
+          markOptions();
         });
         modeMenu.addEventListener("click", async function (ev) {
           var b = ev.target.closest("button[data-mode]");

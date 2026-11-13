@@ -135,6 +135,8 @@
         mode: keepFromCurrent && doc ? doc.mode : C.DEFAULT_MODE,
         // a new session continues the numbering: its first weld is the next one after the last weld of the previous session
         firstWeldNumber: keepFromCurrent && doc ? C.buildRecords(doc).firstWeldNumber + C.buildRecords(doc).joints : 1,
+        // a new session takes the options of the open one, or the last ones chosen on this device
+        options: keepFromCurrent && doc ? doc.options : C.loadPreferences(),
       });
     }
 
@@ -299,12 +301,23 @@
         console.error("chrono load failed", e);
       }
       doc = loaded && loaded.format === C.FORMAT ? loaded : newDoc(false);
+      // the steps of this session follow its own options
+      C.applyOptions(doc.options);
       render();
     })();
 
     return {
       getDoc: () => doc,
       refresh: render,
+      // the options of the open session: saved in the session, and kept as the default of the next ones
+      setOptions: async function (o) {
+        doc.options = C.normalizeOptions(Object.assign({}, doc.options, o));
+        C.applyOptions(doc.options);
+        C.savePreferences(doc.options);
+        await persist();
+        render();
+        return doc.options;
+      },
       // returns false when the mode cannot change (the session has started)
       setMode: async function (mode) {
         if (doc.events.length) return false;

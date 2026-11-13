@@ -29,6 +29,9 @@
       steps: [
         // chrono workbook order, without backweld. Two chains: clamp (released, next clamp in, next fit up) and cabin (in position, cabin up N, cabin up N+1)
         { type: "fitUpReady", col: "1", label: "Fit up ready", button: "Fit up ready N" },
+        // preheat of each weld: its start and its end, between Fit up ready and Cabin in position
+        { type: "preheatStart", col: "1a", label: "Preheat start", button: "Preheat start", option: "preheat" },
+        { type: "preheatEnd", col: "1b", label: "Preheat end", button: "Preheat end", option: "preheat" },
         { type: "cabinIn", col: "2", label: "Cabin in position", button: "Cabin in position" },
         { type: "clampReleased", col: "3", label: "Clamp released", button: "Clamp released" },
         { type: "clampIn", col: "4", label: "Clamp in position N+1", button: "Clamp in position" },
@@ -55,8 +58,35 @@
     return doc && MODE_IDS.indexOf(doc.mode) >= 0 ? doc.mode : DEFAULT_MODE;
   }
 
+  // the options: defined once here, stored in each session (doc.options), shown in Settings (PC and phone)
+  // a step with an "option" is shown only when that option is on
+  const OPTION_DEFS = {
+    preheat: { label: "Preheat (start and end, after Fit up ready)", default: false },
+  };
+  const OPTIONS = {};
+  // the options of the open session: read from its document, or the default when it has none
+  function applyOptions(o) {
+    Object.keys(OPTION_DEFS).forEach((id) => {
+      OPTIONS[id] = o && typeof o[id] === "boolean" ? o[id] : OPTION_DEFS[id].default;
+    });
+    return { ...OPTIONS };
+  }
+  function normalizeOptions(o) {
+    const out = {};
+    Object.keys(OPTION_DEFS).forEach((id) => { out[id] = !!(o && o[id]); });
+    return out;
+  }
+  // the last options chosen on this device: the default of a new session
+  const PREFERENCES_KEY = "chrono-options";
+  function loadPreferences() {
+    try { return normalizeOptions(JSON.parse(localStorage.getItem(PREFERENCES_KEY) || "{}")); } catch (e) { return normalizeOptions({}); }
+  }
+  function savePreferences(o) {
+    try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify(normalizeOptions(o))); } catch (e) { /* no storage */ }
+  }
+  applyOptions({});
   function stepsOf(mode) {
-    return MODES[MODE_IDS.indexOf(mode) >= 0 ? mode : DEFAULT_MODE].steps;
+    return MODES[MODE_IDS.indexOf(mode) >= 0 ? mode : DEFAULT_MODE].steps.filter((s) => !s.option || OPTIONS[s.option]);
   }
 
   function stepTypesOf(mode) {
@@ -317,6 +347,7 @@
       createdAt: opts.createdAt || nowWall(),
       exportedAt: nowWall(),
       events: opts.events || [],
+      options: normalizeOptions(opts.options),
     };
   }
 
@@ -406,8 +437,11 @@
       // Clamp released of a weld needs its Fit up ready first
       clampReleased: !!open && has(open, "fitUpReady") && !has(open, "clampReleased"),
       clampIn: has(open, "clampReleased") && !has(open, "clampIn"),
+      // preheat: the end follows the start, both once per weld
+      preheatStart: OPTIONS.preheat && !!open && has(open, "fitUpReady") && !has(open, "preheatStart"),
+      preheatEnd: OPTIONS.preheat && has(open, "preheatStart") && !has(open, "preheatEnd"),
     };
   }
 
-  return { FORMAT, VERSION, allowedSteps, parisWall, toWall, nowWall, parseWall, MODES, MODE_IDS, DEFAULT_MODE, modeOf, stepsOf, stepTypesOf, validate, buildRecords, fmt, fmtWeld, fmtKp, undo, newId, makeDocument, weldNumberOf, matchWtr, idleGaps };
+  return { FORMAT, VERSION, OPTIONS, OPTION_DEFS, applyOptions, normalizeOptions, loadPreferences, savePreferences, allowedSteps, parisWall, toWall, nowWall, parseWall, MODES, MODE_IDS, DEFAULT_MODE, modeOf, stepsOf, stepTypesOf, validate, buildRecords, fmt, fmtWeld, fmtKp, undo, newId, makeDocument, weldNumberOf, matchWtr, idleGaps };
 });
