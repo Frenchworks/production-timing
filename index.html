@@ -45,8 +45,12 @@
       .chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; color: var(--title); }
       .chart-head button { min-height: 40px; padding: 0 14px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--bg); color: var(--fg); font-weight: bold; cursor: pointer; }
       .mode-menu p { margin: 0; font-size: 0.8em; opacity: 0.8; }
-      .mode-menu label { display: flex; align-items: center; gap: 10px; min-height: 48px; font-weight: bold; padding: 0 4px; }
-      .mode-menu label input { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; }
+      #settings-options { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+      #settings-options label { display: flex; align-items: center; gap: 10px; min-height: 48px; font-weight: bold; padding: 0 4px; }
+      #settings-options label input { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; }
+      /* the close cross of a window: a red x in the top right corner (the class of every window) */
+      .modal-x { position: absolute; top: 4px; right: 10px; width: auto; height: auto; margin: 0; padding: 0 4px; background: none; box-shadow: none; color: #c0392b; font-size: 32px; font-weight: 300; line-height: 1; min-height: 0; border: 0; }
+      .chrono-modal-card { position: relative; }
       .mode-menu button { min-height: 48px; border: 1px solid var(--boxborder); border-radius: 6px; background: var(--bg); color: var(--fg); font-size: 1em; font-weight: bold; cursor: pointer; text-align: left; padding: 0 14px; }
       .mode-menu button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--darken); }
               /* portrait: the title and the menu sit lower, under the status bar */
@@ -61,6 +65,14 @@
         <h3>Chart</h3>
         <p>No weld recorded yet. The chart appears once at least one weld is recorded.</p>
         <button type="button" id="chart-empty-close" class="chrono-modal-close" aria-label="Close">&times;</button>
+      </div>
+    </div>
+    <div id="settings-modal" class="chrono-modal" hidden>
+      <div class="chrono-modal-card message-box" role="dialog" aria-labelledby="settings-title">
+        <h3 id="settings-title">Settings</h3>
+        <p class="small">Options of this session. Each option adds steps to the sheet.</p>
+        <div id="settings-options"></div>
+        <button type="button" class="modal-x" id="settings-x" aria-label="Close">&times;</button>
       </div>
     </div>
     <header class="top">
@@ -78,11 +90,7 @@
           <button type="button" data-mode="onshore">Onshore</button>
           <button type="button" data-mode="offshore">Offshore</button>
         </div>
-        <button type="button" id="settings-sub-btn" aria-expanded="false" aria-controls="settings-sub">Settings</button>
-        <div id="settings-sub" class="mode-group" role="group" aria-label="Settings" hidden>
-          <p>Options of this session</p>
-          <div id="settings-options"></div>
-        </div>
+        <button type="button" id="settings-open">Settings</button>
         <button type="button" id="sessions-btn">Sessions</button>
         <button type="button" id="chart-btn">Chart</button>
         <button type="button" id="chrono-export">Export file</button>
@@ -219,8 +227,8 @@
           menuBtn.setAttribute("aria-expanded", "false");
         });
         // Settings is a sub-menu too: the options of the session (the same as on the PC)
-        var settingsSub = document.getElementById("settings-sub");
-        var settingsSubBtn = document.getElementById("settings-sub-btn");
+        var settingsModal = document.getElementById("settings-modal");
+        var settingsOpenBtn = document.getElementById("settings-open");
         var settingsBox = document.getElementById("settings-options");
         settingsBox.innerHTML = Object.keys(ChronoCore.OPTION_DEFS).map(function (id) {
           return '<label><input type="checkbox" data-option="' + id + '"> ' + ChronoCore.OPTION_DEFS[id].label + "</label>";
@@ -229,11 +237,15 @@
           var o = ui.getDoc().options || {};
           settingsBox.querySelectorAll("input[data-option]").forEach(function (input) { input.checked = !!o[input.dataset.option]; });
         }
-        settingsSubBtn.addEventListener("click", function () {
-          settingsSub.hidden = !settingsSub.hidden;
-          settingsSubBtn.setAttribute("aria-expanded", String(!settingsSub.hidden));
+        // Settings opens a window from the menu: the menu closes, the window shows the options of the session
+        settingsOpenBtn.addEventListener("click", function () {
+          modeMenu.hidden = true;
+          menuBtn.setAttribute("aria-expanded", "false");
           markOptions();
+          settingsModal.hidden = false;
         });
+        document.getElementById("settings-x").addEventListener("click", function () { settingsModal.hidden = true; });
+        settingsModal.addEventListener("click", function (ev) { if (ev.target === settingsModal) settingsModal.hidden = true; });
         settingsBox.addEventListener("change", async function (ev) {
           if (!ev.target.dataset.option) return;
           await ui.setOptions({ [ev.target.dataset.option]: ev.target.checked });
