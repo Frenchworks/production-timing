@@ -107,6 +107,18 @@
     <script>
       (function () {
         "use strict";
+        // keep the screen on while the page is open (where the browser allows it; a tap asks again when needed)
+        var wakeLock = null;
+        function keepAwake() {
+          if (wakeLock || !("wakeLock" in navigator)) return;
+          navigator.wakeLock.request("screen").then(function (lock) {
+            wakeLock = lock;
+            lock.addEventListener("release", function () { wakeLock = null; });
+          }).catch(function () { /* the browser refuses: nothing to do */ });
+        }
+        keepAwake();
+        document.addEventListener("pointerdown", keepAwake);
+        document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") keepAwake(); });
         var KEY = "chrono-mobile-current";
         var C = window.ChronoCore;
         var note = document.getElementById("chrono-note");
