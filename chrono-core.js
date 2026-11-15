@@ -108,12 +108,15 @@
       errors.push("Liste d'événements absente.");
       return errors;
     }
-    const allowed = ["start", "weld", "stop", "skip"].concat(stepTypesOf(modeOf(doc)));
+    // the steps of the file are checked with the options saved in the file, not with the options of the open session
+    const fileOptions = normalizeOptions(doc.options);
+    const fileStepTypes = MODES[modeOf(doc)].steps.filter((s) => !s.option || fileOptions[s.option]).map((s) => s.type);
+    const allowed = ["start", "weld", "stop", "skip"].concat(fileStepTypes);
     let prev = null;
     doc.events.forEach((ev, i) => {
       const n = i + 1;
       if (!ev || allowed.indexOf(ev.type) < 0) errors.push("Événement " + n + " : type inconnu pour ce mode.");
-      if (ev && ev.type === "skip" && stepTypesOf(modeOf(doc)).indexOf(ev.step) < 0) errors.push("Événement " + n + " : étape à passer inconnue.");
+      if (ev && ev.type === "skip" && fileStepTypes.indexOf(ev.step) < 0) errors.push("Événement " + n + " : étape à passer inconnue.");
       const t = ev && typeof ev.t === "string" ? parseWall(ev.t) : NaN;
       if (isNaN(t)) {
         errors.push("Événement " + n + " : heure invalide.");
