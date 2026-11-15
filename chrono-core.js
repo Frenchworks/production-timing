@@ -328,13 +328,10 @@
 
   // Times are kept as wall-clock text, without zone, as the phone shows them: "2026-11-10T08:20:50.565".
   // In the code a time is the wall clock as milliseconds (read as UTC), so the same text gives the same time on any PC.
-  const PARIS = "Europe/Paris";
-  // a real instant (ms) -> the Paris wall clock as ms
-  function parisWall(instant) {
-    const p = {};
-    new Intl.DateTimeFormat("en-GB", { timeZone: PARIS, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })
-      .formatToParts(new Date(instant)).forEach((x) => { p[x.type] = x.value; });
-    return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second, ((instant % 1000) + 1000) % 1000);
+  // a real instant (ms) -> the wall clock of this device as ms (no time zone conversion)
+  function localWall(instant) {
+    const d = new Date(instant);
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), ((instant % 1000) + 1000) % 1000);
   }
   // wall clock ms -> text "YYYY-MM-DDTHH:MM:SS" (no milliseconds in the files)
   function toWall(ms) {
@@ -342,11 +339,10 @@
     return d.getUTCFullYear() + "-" + q(d.getUTCMonth() + 1) + "-" + q(d.getUTCDate()) + "T" + q(d.getUTCHours()) + ":" + q(d.getUTCMinutes()) + ":" + q(d.getUTCSeconds());
   }
   // now, on the Paris wall clock, as text
-  function nowWall() { return toWall(parisWall(Date.now())); }
+  function nowWall() { return toWall(localWall(Date.now())); }
   // text -> wall clock ms. Text with a zone (old files, "Z") is converted to the Paris wall clock; text without zone is read as is.
   function parseWall(s) {
     if (typeof s !== "string") return NaN;
-    if (/(Z|[+-]d{2}:?d{2})$/i.test(s)) return parisWall(Date.parse(s));
     return Date.parse(s + "Z");
   }
 
@@ -463,5 +459,5 @@
     };
   }
 
-  return { FORMAT, VERSION, OPTIONS, OPTION_DEFS, applyOptions, normalizeOptions, loadPreferences, savePreferences, allowedSteps, parisWall, toWall, nowWall, parseWall, MODES, MODE_IDS, DEFAULT_MODE, modeOf, stepsOf, stepTypesOf, validate, buildRecords, fmt, fmtWeld, fmtKp, undo, newId, makeDocument, weldNumberOf, matchWtr, idleGaps };
+  return { FORMAT, VERSION, OPTIONS, OPTION_DEFS, applyOptions, normalizeOptions, loadPreferences, savePreferences, allowedSteps, localWall, toWall, nowWall, parseWall, MODES, MODE_IDS, DEFAULT_MODE, modeOf, stepsOf, stepTypesOf, validate, buildRecords, fmt, fmtWeld, fmtKp, undo, newId, makeDocument, weldNumberOf, matchWtr, idleGaps };
 });
