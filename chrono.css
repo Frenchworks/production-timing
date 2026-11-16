@@ -193,3 +193,8 @@
 /* the WTR check table: each column fits its content, the table is only as wide as its columns */
 .chrono-table.chrono-wtr { table-layout: auto; width: auto; min-width: 0; }
 .chrono-table.chrono-wtr th, .chrono-table.chrono-wtr td { width: auto !important; white-space: nowrap; }
+
+/* the timing character stands behind the Title field and sticks out above it */
+.chrono-title-field { position: relative; }
+.chrono-title-field input { position: relative; z-index: 1; }
+.chrono-mascot { position: absolute; top: -40px; right: 22px; width: 85px; height: auto; z-index: 0; pointer-events: none; }

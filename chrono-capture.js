@@ -205,7 +205,8 @@
       const weldInRow = false;
       const body =
         '<div class="chrono-head">' +
-        '<label class="chrono-field">Title<input type="text" class="chrono-title" value="' + esc(doc.title) + '"' + (s.started ? " disabled" : "") + "></label>" +
+        // the timing character stands behind the Title field and sticks out above it
+        '<label class="chrono-field chrono-title-field">Title<input type="text" class="chrono-title" value="' + esc(doc.title) + '"' + (s.started ? " disabled" : "") + '><img class="chrono-mascot" src="img/characters/timing.png" alt="" draggable="false"></label>' +
         // KP and first weld side by side on one line
         '<div class="chrono-pair">' +
         '<label class="chrono-field">KP<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" class="chrono-kp" value="' + (doc.kp === null || doc.kp === undefined ? "" : doc.kp) + '"' + (s.started ? " disabled" : "") + "></label>" +
