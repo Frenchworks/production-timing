@@ -44,7 +44,10 @@
             return "<td" + hl + ">" + (typeof d === "number" ? C.fmt(d) : "") + (cumulativeSteps && typeof cum === "number" && !(rec.skipped && rec.skipped[s.type]) ? "<br><small>" + C.fmt(cum) + "</small>" : "") + "</td>";
           })
           .join("");
-        return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + '</td><td class="fit">' + clock(rec.start) + "</td>" + cells + tailRow(rec) + '<td class="fit col-max">' + C.fmt(rec.maxSec) + '</td><td class="col-comment"><input type="text" class="chrono-comment" data-start="' + rec.start + '" value="' + esc(rec.comment) + '" placeholder="Comment"></td></tr>';
+        // onshore: the fit up of the weld is shown under its Fit up ready, and highlighted when it is the longest step of the weld
+        const fv = typeof rec.fitIntvSec === "number" ? rec.fitIntvSec : null;
+        const startCell = '<td class="fit' + (rec.highlight.indexOf("fitIntv") >= 0 ? " chrono-max" : "") + '">' + clock(rec.start) + (fv !== null ? "<br><small>" + C.fmt(fv) + "</small>" : "") + "</td>";
+        return '<tr><td class="fit">' + esc(rec.kp) + '</td><td class="fit">' + esc(label) + "</td>" + startCell + cells + tailRow(rec) + '<td class="fit col-max">' + C.fmt(rec.maxSec) + '</td><td class="col-comment"><input type="text" class="chrono-comment" data-start="' + rec.start + '" value="' + esc(rec.comment) + '" placeholder="Comment"></td></tr>';
       })
       .join("");
     // totals and averages of the Cabin 1 up and Clamp move columns, over the welds where they are known
@@ -122,12 +125,19 @@
   // noChart: the chart is shown elsewhere (from the menu), not under the table
   // noSummary: the summary (joints, total, average) is shown above the buttons instead
   function renderReport(el, doc, noChart, noSummary) {
-    const r = C.buildRecords(doc);
-    el.innerHTML =
-      '<div class="chrono-report">' +
-      (noSummary ? "" : summaryHtml(r)) +
-      (r.records.length ? tableHtml(r) + (noChart ? "" : chartHtml(r)) : '<p class="small">No weld recorded yet.</p>') +
-      "</div>";
+    // the steps are those of this report's own session (its options), then the options of the open session are put back
+    const before = Object.assign({}, C.OPTIONS);
+    C.applyOptions(doc.options);
+    try {
+      const r = C.buildRecords(doc);
+      el.innerHTML =
+        '<div class="chrono-report">' +
+        (noSummary ? "" : summaryHtml(r)) +
+        (r.records.length ? tableHtml(r) + (noChart ? "" : chartHtml(r)) : '<p class="small">No weld recorded yet.</p>') +
+        "</div>";
+    } finally {
+      C.applyOptions(before);
+    }
   }
 
   function mountCapture(el, opts) {

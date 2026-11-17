@@ -164,10 +164,10 @@
 
         function fileName(doc) {
           // the date and time written in the session (the phone clock), in the name
-          var wall = ChronoCore.toWall(ChronoCore.parseWall(doc.createdAt)); var stamp = wall.slice(0, 10) + "_" + wall.slice(11, 13) + wall.slice(14, 16);
+          var wall = ChronoCore.toWall(ChronoCore.parseWall(doc.createdAt)); var stamp = wall.slice(8, 10) + "-" + wall.slice(5, 7) + "-" + wall.slice(0, 4) + "_" + wall.slice(11, 13) + wall.slice(14, 16);
           // the title of the session goes in the file name, without characters that a file name cannot hold
           var t = String(doc.title || "").trim().slice(0, 60).replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "");
-          return "chrono_" + (t ? t + "_" : "") + stamp + "_" + doc.sessionId.slice(0, 8) + ".json";
+          return "ProdTiming_" + (t ? t + "_" : "") + stamp + "_" + doc.sessionId.slice(0, 8) + ".json";
         }
 
         document.getElementById("chrono-export").addEventListener("click", async function () {

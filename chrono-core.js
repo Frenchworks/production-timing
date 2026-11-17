@@ -33,6 +33,8 @@
         { type: "preheatStart", col: "1a", label: "Preheat start", button: "Preheat start", option: "preheat" },
         { type: "preheatEnd", col: "1b", label: "Preheat end", button: "Preheat end", option: "preheat" },
         { type: "cabinIn", col: "2", label: "Cabin in position", button: "Cabin in position" },
+        // hot pass finish: between Cabin in position and Clamp released; its time is work, not lost, and is left out of the longest steps
+        { type: "hotPassFinish", col: "2b", label: "Hot pass finish", button: "Hot pass finish" },
         { type: "clampReleased", col: "3", label: "Clamp released", button: "Clamp released" },
         // blasting: start and end, before Clamp in position (an option, shown when it is on)
         { type: "blastingStart", col: "3a", label: "Blasting start", button: "Blasting start", option: "blasting" },
@@ -91,7 +93,16 @@
   }
   applyOptions({});
   function stepsOf(mode) {
-    return MODES[MODE_IDS.indexOf(mode) >= 0 ? mode : DEFAULT_MODE].steps.filter((s) => !s.option || OPTIONS[s.option]);
+    const m = MODE_IDS.indexOf(mode) >= 0 ? mode : DEFAULT_MODE;
+    const list = MODES[m].steps.filter((s) => !s.option || OPTIONS[s.option]);
+    // onshore: the steps follow each other (1, 2, 3...); an optional step keeps its own number (Preheat: 1a, 1b)
+    if (m !== "onshore") return list;
+    let n = 0;
+    return list.map((s) => {
+      if (!s.option) return { ...s, col: String(++n) };
+      // an optional step takes the number of the step before it, with its letter (Preheat: 1a, 1b)
+      return { ...s, col: n + s.col.slice(-1) };
+    });
   }
 
   function stepTypesOf(mode) {
@@ -229,18 +240,34 @@
         r.durations[k] = r.steps[k] - prev;
         prev = r.steps[k];
       }
-      const values = done.map((k) => r.durations[k]);
+      // the hot pass finish is a phase of its own: its time is left out of the longest step and of the lost time
+      const counted = done.filter((k) => k !== "hotPassFinish");
+      const values = counted.map((k) => r.durations[k]);
       // comment of the line: kept in the document, keyed by the start time of the weld (it does not move with the numbering)
       r.comment = (doc.comments && typeof doc.comments[String(r.start)] === "string") ? doc.comments[String(r.start)] : "";
       r.maxSec = values.length ? Math.max.apply(null, values) : null;
       // the longest step(s) of the weld are highlighted
-      r.highlight = done.filter((k) => r.durations[k] >= r.maxSec);
+      // onshore: red is the welding only (Clamp released); the other steps are waiting or work, shown orange when lost. Offshore: the longest step
+      r.highlight = counted.filter((k) => r.durations[k] >= r.maxSec);
       // offshore: fit up (weld start to End of fit up), pull (Pull start to Pull end) and arc (Start weld to Fin IVT)
       if (mode === "offshore") {
         r.fitSec = typeof r.steps.fitUpEnd === "number" ? r.steps.fitUpEnd : null;
         r.pullSec = typeof r.steps.pullStart === "number" && typeof r.steps.pullEnd === "number" ? r.steps.pullEnd - r.steps.pullStart : null;
         r.arcSec = typeof r.steps.startWeld === "number" && typeof r.steps.finIvt === "number" ? r.steps.finIvt - r.steps.startWeld : null;
       }
+    }
+
+    // onshore: the fit up of each weld (from the Clamp in position of the weld before to its Fit up ready) takes part in the longest step of the weld
+    if (mode === "onshore") {
+      records.forEach((rec, i) => {
+        const prev = i > 0 ? records[i - 1] : null;
+        const v = prev && prev.steps && typeof prev.steps.clampIn === "number" ? (rec.start - prev.start) / 1000 - prev.steps.clampIn : null;
+        rec.fitIntvSec = v !== null && v >= 0 ? v : null;
+        if (rec.fitIntvSec === null) return;
+        const counted = Object.keys(rec.durations).filter((k) => k !== "hotPassFinish");
+        rec.maxSec = Math.max(...counted.map((k) => rec.durations[k]), rec.fitIntvSec);
+        rec.highlight = counted.filter((k) => rec.durations[k] >= rec.maxSec).concat(rec.fitIntvSec >= rec.maxSec ? ["fitIntv"] : []);
+      });
     }
 
     const columns = {};
@@ -341,13 +368,14 @@
     const d = new Date(ms); const q = (n, k) => String(n).padStart(k || 2, "0");
     return d.getUTCFullYear() + "-" + q(d.getUTCMonth() + 1) + "-" + q(d.getUTCDate()) + "T" + q(d.getUTCHours()) + ":" + q(d.getUTCMinutes()) + ":" + q(d.getUTCSeconds());
   }
-  // now, on the Paris wall clock, as text
+  // now, on the device wall clock, as text
   function nowWall() { return toWall(localWall(Date.now())); }
-  // text -> wall clock ms. Text with a zone (old files, "Z") is converted to the Paris wall clock; text without zone is read as is.
+  // text -> wall clock ms. Text is read as is (no zone conversion).
   function parseWall(s) {
     if (typeof s !== "string") return NaN;
     return Date.parse(s + "Z");
   }
+
 
   function makeDocument(opts) {
     return {
@@ -392,7 +420,20 @@
       let status = "none";
       if (cycle) status = weldNumberOf(cycle.weld) === r.weldNumber ? "same" : "other";
       const timingSec = (r.end - r.start) / 1000;
-      const arcSec = inside.length ? inside.reduce((sum, c) => sum + (c.durationMs || 0), 0) / 1000 : null;
+      // the cycles of the weld: the run of consecutive cycles of the same weld (as the WTR page), from its first cycle in the window
+      let group = [];
+      if (inside.length) {
+        const i0 = list.indexOf(inside[0]);
+        let k = i0;
+        while (k + 1 < list.length && list[k + 1].weld === inside[0].weld) k++;
+        group = list.slice(i0, k + 1);
+      }
+      // the arc time is the span of the weld: from the start of its first cycle to the stop of its last one
+      const arcSec = group.length ? (group[group.length - 1].start + (group[group.length - 1].durationMs || 0) - group[0].start) / 1000 : null;
+      // the arc starts with the first cycle of the weld window and lasts the arc time (the sum of its cycles)
+      const arcStart = inside.length ? inside[0].start : null;
+      const lastOfGroup = group.length ? group[group.length - 1] : null;
+      const arcEnd = lastOfGroup ? lastOfGroup.start + (lastOfGroup.durationMs || 0) : null;
       return {
         weldLabel: r.weldLabel,
         start: r.start,
@@ -402,6 +443,8 @@
         wtrSec: cycle ? cycle.durationMs / 1000 : null,
         cycles: inside.length,
         arcSec,
+        arcStart,
+        arcEnd,
         nonArcSec: arcSec === null ? null : timingSec - arcSec,
         status,
       };
@@ -454,8 +497,9 @@
       clampReleased: !!open && has(open, "fitUpReady") && !has(open, "clampReleased"),
       clampIn: has(open, "clampReleased") && !has(open, "clampIn"),
       // preheat: the end follows the start, both once per weld
-      preheatStart: OPTIONS.preheat && !!open && has(open, "fitUpReady") && !has(open, "preheatStart"),
-      preheatEnd: OPTIONS.preheat && has(open, "preheatStart") && !has(open, "preheatEnd"),
+      preheatStart: OPTIONS.preheat && !!open && has(open, "fitUpReady") && !has(open, "preheatStart") && !has(open, "hotPassFinish"),
+      preheatEnd: OPTIONS.preheat && has(open, "preheatStart") && !has(open, "preheatEnd") && !has(open, "hotPassFinish"),
+      hotPassFinish: !!open && has(open, "fitUpReady") && !has(open, "hotPassFinish"),
       // blasting: start and end once per weld, the start only before Clamp in position
       blastingStart: OPTIONS.blasting && !!open && !has(open, "blastingStart") && !has(open, "clampIn"),
       blastingEnd: OPTIONS.blasting && has(open, "blastingStart") && !has(open, "blastingEnd"),
